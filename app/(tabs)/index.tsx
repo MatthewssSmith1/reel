@@ -1,74 +1,86 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { StyleSheet, View, Dimensions, FlatList } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
+import { useCallback, useRef } from 'react';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+const { width, height } = Dimensions.get('window');
 
-export default function HomeScreen() {
+const VIDEOS = [
+  { id: 'a', source: require('../../assets/videos/a.mp4') },
+  { id: 'b', source: require('../../assets/videos/b.mp4') },
+  { id: 'c', source: require('../../assets/videos/c.mp4') },
+  { id: 'd', source: require('../../assets/videos/d.mp4') },
+  { id: 'e', source: require('../../assets/videos/e.mp4') },
+  { id: 'f', source: require('../../assets/videos/f.mp4') },
+  { id: 'g', source: require('../../assets/videos/g.mp4') },
+  { id: 'h', source: require('../../assets/videos/h.mp4') },
+  { id: 'i', source: require('../../assets/videos/i.mp4') },
+  { id: 'j', source: require('../../assets/videos/j.mp4') },
+  { id: 'k', source: require('../../assets/videos/k.mp4') },
+  { id: 'l', source: require('../../assets/videos/l.mp4') },
+  { id: 'm', source: require('../../assets/videos/m.mp4') },
+  { id: 'n', source: require('../../assets/videos/n.mp4') },
+  { id: 'o', source: require('../../assets/videos/o.mp4') },
+];
+
+export default function FeedScreen() {
+  const videoRefs = useRef<{ [key: string]: Video | null }>({});
+
+  const onViewableItemsChanged = useCallback(({ changed }: { changed: any[] }) => {
+    changed.forEach(item => {
+      const video = videoRefs.current[item.item.id];
+      if (!video) return;
+      
+      if (item.isViewable) video.playAsync();
+      else video.pauseAsync();
+    });
+  }, []);
+
+  const viewabilityConfig = { itemVisiblePercentThreshold: 50 };
+
+  const renderVideo = ({ item }: { item: { id: string; source: number } }) => (
+    <View style={styles.videoContainer}>
+      <Video
+        ref={ref => (videoRefs.current[item.id] = ref)}
+        source={item.source}
+        style={styles.video}
+        resizeMode={ResizeMode.COVER}
+        isLooping
+        shouldPlay={false}
+      />
+    </View>
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <FlatList
+        data={VIDEOS}
+        renderItem={renderVideo}
+        keyExtractor={item => item.id}
+        pagingEnabled
+        showsVerticalScrollIndicator={false}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        decelerationRate="fast"
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  videoContainer: {
+    width,
+    height: height,
+    backgroundColor: '#000',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  video: {
+    flex: 1,
   },
-});
+  loading: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+}); 
