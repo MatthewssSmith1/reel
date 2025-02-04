@@ -1,9 +1,9 @@
-import { StyleSheet, View, Dimensions } from 'react-native';
+import { getScreenHeight, getScreenWidth } from '@/lib/utils';
 import { Video, ResizeMode } from 'expo-av';
+import { StyleSheet, View } from 'react-native';
+import { useCommentStore } from '@/lib/commentStore';
 import { ToolbarButton } from './ToolbarButton';
 import { Post } from '@/lib/firebase';
-
-const { width, height } = Dimensions.get('window');
 
 const VIDEO_ASSETS: { [key: string]: number } = {
   '0': require('../assets/videos/0.mp4'),
@@ -29,6 +29,8 @@ type VideoViewProps = {
 };
 
 export function VideoView({ post, videoRef }: VideoViewProps) {
+  const { toggleMessages } = useCommentStore();
+
   return (
     <View style={styles.videoContainer}>
       <Video
@@ -41,8 +43,12 @@ export function VideoView({ post, videoRef }: VideoViewProps) {
       />
       <View style={styles.toolbarContainer}>
         <ToolbarButton name="person.circle.fill" />
-        <ToolbarButton name="heart.fill" count={10} />
-        <ToolbarButton name="message.fill" count={15} />
+        <ToolbarButton name="heart.fill" count={post.likes_count} />
+        <ToolbarButton 
+          name="message.fill" 
+          count={post.comments_count} 
+          onPress={() => toggleMessages(true)}
+        />
         <ToolbarButton name="square.and.arrow.up" />
       </View>
     </View>
@@ -51,8 +57,8 @@ export function VideoView({ post, videoRef }: VideoViewProps) {
 
 const styles = StyleSheet.create({
   videoContainer: {
-    width,
-    height: height,
+    width: getScreenWidth(),
+    height: getScreenHeight(),
     backgroundColor: '#000',
   },
   video: {

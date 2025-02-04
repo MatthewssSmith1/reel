@@ -41,4 +41,5 @@ app-example
 .cursorrules
 docs/
 assets/videos/
+assets/videos-large/
 config.ts

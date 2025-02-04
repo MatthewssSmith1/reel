@@ -6,12 +6,15 @@ import { db } from '@/lib/firebase'
 type PostStore = {
   posts: Post[]
   isLoading: boolean
+  currentPost: Post | null
   loadPosts: () => Promise<void>
+  setCurrentPost: (post: Post) => void
 }
 
 export const usePostStore = create<PostStore>((set, get) => ({
   posts: [],
   isLoading: false,
+  currentPost: null,
   loadPosts: async () => {
     set({ isLoading: true })
     try {
@@ -24,4 +27,5 @@ export const usePostStore = create<PostStore>((set, get) => ({
       console.log(error)
     }
   },
+  setCurrentPost: (post: Post) => set({ currentPost: post }),
 }))

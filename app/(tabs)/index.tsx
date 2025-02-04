@@ -1,36 +1,39 @@
-import { StyleSheet, View, FlatList, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { useCallback, useRef, useEffect } from 'react';
+import { useCommentStore } from '@/lib/commentStore';
+import { getScreenHeight } from '@/lib/utils';
+import { CommentsSheet } from '@/components/CommentsSheet';
 import { usePostStore } from '@/lib/postStore';
 import { VideoView } from '@/components/VideoView';
 import { Video } from 'expo-av';
-import { Post } from '@/lib/firebase';
-
-const viewabilityConfig = { itemVisiblePercentThreshold: 50 };
 
 export default function FeedScreen() {
+  const { posts, isLoading, loadPosts, setCurrentPost } = usePostStore();
+  const { toggleMessages, loadComments } = useCommentStore();
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
-  const { posts, isLoading, loadPosts } = usePostStore();
-  
+  const scrollRef = useRef<ScrollView>(null);
+
   useEffect(() => {
     if (!posts.length) loadPosts();
   }, [posts.length]);
 
-  const onViewableItemsChanged = useCallback(({ changed }: { changed: any[] }) => {
-    changed.forEach(item => {
-      const video = videoRefs.current[item.item.id];
+  const onScroll = useCallback(({ nativeEvent }: any) => {
+    const index = Math.round(nativeEvent.contentOffset.y / getScreenHeight());
+    const post = posts[index];
+    if (!post) return;
+
+    Object.entries(videoRefs.current).forEach(([id, video]) => {
       if (!video) return;
-      
-      if (item.isViewable) video.playAsync();
+      if (id === post.id) video.playAsync();
       else video.pauseAsync();
     });
-  }, []);
+    
+    setCurrentPost(post);
 
-  const renderVideo = useCallback(({ item }: { item: Post }) => (
-    <VideoView
-      post={item}
-      videoRef={ref => (videoRefs.current[item.id] = ref)}
-    />
-  ), []);
+    toggleMessages(false);
+    loadComments(post.id);
+  }, [posts, setCurrentPost]);
 
   if (isLoading) return (
     <View style={[styles.container, styles.loading]}>
@@ -39,18 +42,27 @@ export default function FeedScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={posts}
-        renderItem={renderVideo}
-        keyExtractor={item => item.id}
+    <GestureHandlerRootView style={styles.container}>
+      <ScrollView
+        ref={scrollRef}
         pagingEnabled
         showsVerticalScrollIndicator={false}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         decelerationRate="fast"
-      />
-    </View>
+        snapToInterval={getScreenHeight()}
+        snapToAlignment="start"
+      >
+        {posts.map(post => (
+          <VideoView
+            key={post.id}
+            post={post}
+            videoRef={ref => (videoRefs.current[post.id] = ref)}
+          />
+        ))}
+      </ScrollView>
+      <CommentsSheet />
+    </GestureHandlerRootView>
   );
 }
 
@@ -60,7 +72,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   loading: {
-    flex: 1,
-    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }); 

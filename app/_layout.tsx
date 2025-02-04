@@ -4,6 +4,7 @@ import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { useUserStore } from '@/lib/userStore';
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { Slot } from 'expo-router';
@@ -16,6 +17,11 @@ const queryClient = new QueryClient();
 function AuthGuard() {
   const { isLoading } = useProtectedRoute();
   const colorScheme = useColorScheme();
+  const { loadUsers } = useUserStore();
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
   if (isLoading) return null;
 

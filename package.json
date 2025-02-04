@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
@@ -21,7 +20,7 @@
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
     "@tanstack/react-query": "^5.66.0",
-    "expo": "~52.0.28",
+    "expo": "^52.0.29",
     "expo-asset": "~11.0.3",
     "expo-av": "~15.0.2",
     "expo-blur": "~14.0.3",
