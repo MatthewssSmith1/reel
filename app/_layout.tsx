@@ -1,4 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import * as SplashScreen from 'expo-splash-screen';
@@ -9,6 +10,8 @@ import { Slot } from 'expo-router';
 import 'react-native-reanimated';
 
 SplashScreen.preventAutoHideAsync();
+
+const queryClient = new QueryClient();
 
 function AuthGuard() {
   const { isLoading } = useProtectedRoute();
@@ -36,7 +39,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <AuthGuard />
+      <QueryClientProvider client={queryClient}>
+        <AuthGuard />
+      </QueryClientProvider>
     </AuthProvider>
   );
 }

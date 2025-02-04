@@ -1,6 +1,6 @@
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { auth } from '@/firebaseConfig';
+import { auth } from '@/lib/firebase';
 
 type AuthContextType = {
   user: User | null;

@@ -1,29 +1,19 @@
-import { StyleSheet, View, Dimensions, FlatList } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
-import { useCallback, useRef } from 'react';
+import { StyleSheet, View, FlatList, ActivityIndicator } from 'react-native';
+import { useCallback, useRef, useEffect } from 'react';
+import { usePostStore } from '@/lib/postStore';
+import { VideoView } from '@/components/VideoView';
+import { Video } from 'expo-av';
+import { Post } from '@/lib/firebase';
 
-const { width, height } = Dimensions.get('window');
-
-const VIDEOS = [
-  { id: 'a', source: require('../../assets/videos/a.mp4') },
-  { id: 'b', source: require('../../assets/videos/b.mp4') },
-  { id: 'c', source: require('../../assets/videos/c.mp4') },
-  { id: 'd', source: require('../../assets/videos/d.mp4') },
-  { id: 'e', source: require('../../assets/videos/e.mp4') },
-  { id: 'f', source: require('../../assets/videos/f.mp4') },
-  { id: 'g', source: require('../../assets/videos/g.mp4') },
-  { id: 'h', source: require('../../assets/videos/h.mp4') },
-  { id: 'i', source: require('../../assets/videos/i.mp4') },
-  { id: 'j', source: require('../../assets/videos/j.mp4') },
-  { id: 'k', source: require('../../assets/videos/k.mp4') },
-  { id: 'l', source: require('../../assets/videos/l.mp4') },
-  { id: 'm', source: require('../../assets/videos/m.mp4') },
-  { id: 'n', source: require('../../assets/videos/n.mp4') },
-  { id: 'o', source: require('../../assets/videos/o.mp4') },
-];
+const viewabilityConfig = { itemVisiblePercentThreshold: 50 };
 
 export default function FeedScreen() {
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
+  const { posts, isLoading, loadPosts } = usePostStore();
+  
+  useEffect(() => {
+    if (!posts.length) loadPosts();
+  }, [posts.length]);
 
   const onViewableItemsChanged = useCallback(({ changed }: { changed: any[] }) => {
     changed.forEach(item => {
@@ -35,25 +25,23 @@ export default function FeedScreen() {
     });
   }, []);
 
-  const viewabilityConfig = { itemVisiblePercentThreshold: 50 };
+  const renderVideo = useCallback(({ item }: { item: Post }) => (
+    <VideoView
+      post={item}
+      videoRef={ref => (videoRefs.current[item.id] = ref)}
+    />
+  ), []);
 
-  const renderVideo = ({ item }: { item: { id: string; source: number } }) => (
-    <View style={styles.videoContainer}>
-      <Video
-        ref={ref => (videoRefs.current[item.id] = ref)}
-        source={item.source}
-        style={styles.video}
-        resizeMode={ResizeMode.COVER}
-        isLooping
-        shouldPlay={false}
-      />
+  if (isLoading) return (
+    <View style={[styles.container, styles.loading]}>
+      <ActivityIndicator size="large" color="#fff" />
     </View>
   );
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={VIDEOS}
+        data={posts}
         renderItem={renderVideo}
         keyExtractor={item => item.id}
         pagingEnabled
@@ -70,14 +58,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-  },
-  videoContainer: {
-    width,
-    height: height,
-    backgroundColor: '#000',
-  },
-  video: {
-    flex: 1,
   },
   loading: {
     flex: 1,

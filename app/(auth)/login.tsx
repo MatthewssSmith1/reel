@@ -5,7 +5,7 @@ import { TextInput, Button } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { auth } from '@/firebaseConfig';
+import { auth } from '@/lib/firebase';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
