@@ -1,8 +1,13 @@
-import { StyleSheet, Pressable, Image, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, Pressable, Image, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { useEffect, useState } from 'react';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { ThemedView as View } from '@/components/ThemedView';
+import { Post, storage } from '@/lib/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserStore } from '@/lib/userStore';
+import { usePostStore } from '@/lib/postStore';
+import { router } from 'expo-router';
 
 type ProfileProps = {
   userId: string;
@@ -19,8 +24,47 @@ const StatDisplay = ({ value, label }: { value: number; label: string }) => (
 
 export function Profile({ userId, headerLeft, headerRight }: ProfileProps) {
   const { users } = useUserStore();
-  const user = users[userId];
+  const { posts } = usePostStore();
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(true);
 
+  const userPosts = posts.filter(post => post.author_id === userId);
+
+  useEffect(() => {
+    const loadThumbnails = async () => {
+      try {
+        const thumbnailUrls: Record<string, string> = {};
+        await Promise.all(
+          userPosts.map(async (post) => {
+            try {
+              const thumbnailRef = ref(storage, `thumbnails/${post.video_id}.jpg`);
+              const url = await getDownloadURL(thumbnailRef);
+              thumbnailUrls[post.id] = url;
+            } catch (error) {
+              console.error('Error loading thumbnail:', error);
+            }
+          })
+        );
+        setThumbnails(thumbnailUrls);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error loading thumbnails:', error);
+        setIsLoading(false);
+      }
+    };
+
+    if (userPosts.length > 0) loadThumbnails();
+    else setIsLoading(false);
+  }, [userPosts]);
+
+  const handlePostPress = (post: Post) => {
+    router.push({
+      pathname: '/(modals)/post',
+      params: { postId: post.id, userId }
+    });
+  };
+
+  const user = users[userId];
   if (!user) return null;
 
   return (
@@ -51,13 +95,30 @@ export function Profile({ userId, headerLeft, headerRight }: ProfileProps) {
         {/* Bio */}
         <Text style={styles.bio}>{user.bio}</Text>
 
-        {/* Placeholder Grid */}
+        {/* Posts Grid */}
         <View style={styles.gridContainer}>
-          {Array(6).fill(0).map((_, i) => (
-            <View key={i} style={styles.gridItem}>
-              <View style={styles.placeholderVideo} />
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#fff" />
             </View>
-          ))}
+          ) : (
+            userPosts.map((post) => (
+              <Pressable 
+                key={post.id} 
+                style={styles.gridItem}
+                onPress={() => handlePostPress(post)}
+              >
+                {thumbnails[post.id] ? (
+                  <Image 
+                    source={{ uri: thumbnails[post.id] }}
+                    style={styles.thumbnail}
+                  />
+                ) : (
+                  <View style={styles.placeholderVideo} />
+                )}
+              </Pressable>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -131,7 +192,18 @@ const styles = StyleSheet.create({
   },
   placeholderVideo: {
     flex: 1,
-    backgroundColor: '#2a2a2a',
+    // backgroundColor: '#2a2a2a',
+    borderRadius: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: GRID_ITEM_WIDTH * 2,
+    width: '100%',
+  },
+  thumbnail: {
+    flex: 1,
     borderRadius: 4,
   },
 }); 

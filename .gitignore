@@ -40,6 +40,7 @@ app-example
 .vscode/
 .cursorrules
 docs/
+assets/thumbnails/
 assets/videos/
 assets/videos-large/
 config.ts
