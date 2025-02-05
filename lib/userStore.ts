@@ -1,4 +1,4 @@
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
 import { db, User } from '@/lib/firebase'
 import { create } from 'zustand'
 
@@ -8,6 +8,7 @@ type UserStore = {
   authUser: User | null
   loadUsers: (authUserId?: string) => Promise<void>
   updateFollowCounts: (followerId: string, followingId: string, increment: boolean) => void
+  updateBio: (userId: string, bio: string) => Promise<void>
 }
 
 export const useUserStore = create<UserStore>((set, get) => ({
@@ -48,5 +49,25 @@ export const useUserStore = create<UserStore>((set, get) => ({
         ? { ...authUser, followers_count: (authUser.followers_count || 0) + delta }
         : authUser
     })
+  },
+  updateBio: async (userId: string, bio: string) => {
+    const { users, authUser } = get()
+    try {
+      const userRef = doc(db, 'users', userId)
+      await updateDoc(userRef, { bio })
+      
+      set({
+        users: {
+          ...users,
+          [userId]: { ...users[userId], bio }
+        },
+        authUser: authUser?.uid === userId 
+          ? { ...authUser, bio }
+          : authUser
+      })
+    } catch (error) {
+      console.error('Failed to update bio:', error)
+      throw error
+    }
   }
 })) 

@@ -99,7 +99,10 @@ export function Profile({ userId, headerLeft, headerRight }: ProfileProps) {
         {/* Action Button */}
         <Pressable 
           style={styles.actionButton}
-          onPress={() => isAuthUser ? console.log('Edit profile') : toggleFollow(authUser?.uid, userId)}
+          onPress={() => isAuthUser 
+            ? router.push('/(modals)/edit-profile')
+            : toggleFollow(authUser?.uid, userId)
+          }
         >
           <Text style={styles.actionButtonText}>
             {isAuthUser ? 'Edit Profile' : (isFollowing(userId) ? 'Unfollow' : 'Follow')}
