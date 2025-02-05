@@ -96,6 +96,11 @@ export function VideoView({ post, shouldPlay, videoRef, hideProfileButton = fals
           shouldPlay={shouldPlay}
         />
       {/* )} */}
+      <View style={styles.descriptionContainer}>
+        <ThemedText style={styles.descriptionText} numberOfLines={3}>
+          {post.description}
+        </ThemedText>
+      </View>
       <View style={styles.toolbarContainer}>
         {!hideProfileButton && (
           <ToolbarButton name="person-circle" onPress={handleProfilePress} />
@@ -128,7 +133,7 @@ const styles = StyleSheet.create({
   toolbarContainer: {
     position: 'absolute',
     right: 16,
-    bottom: 110,
+    bottom: 100,
     alignItems: 'center',
   },
   loadingContainer: {
@@ -145,5 +150,18 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#fff',
     textAlign: 'center',
+  },
+  descriptionContainer: {
+    position: 'absolute',
+    left: 16,
+    bottom: 110,
+    right: 90,
+  },
+  descriptionText: {
+    color: '#fff',
+    fontSize: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
 }); 

@@ -28,6 +28,7 @@ export type Post = {
   id: string
   author_id: string
   video_id: string
+  description: string
   created_at: Timestamp
   likes_count: number
   comments_count: number

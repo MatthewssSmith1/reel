@@ -158,13 +158,14 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingBottom: 20,
   },
   avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     marginBottom: 12,
+    backgroundColor: 'white',
   },
   username: {
     fontSize: 18,
@@ -175,6 +176,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingHorizontal: 30,
+    paddingBottom: 20,
     marginBottom: 20,
   },
   statContainer: {
@@ -224,7 +226,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
     paddingHorizontal: 32,
     paddingVertical: 12,
-    borderRadius: 24,
+    borderRadius: 8,
     marginBottom: 20,
     alignSelf: 'center',
   },

@@ -20,7 +20,7 @@ function createUser(username: string, bio: string, uid?: string): User {
 }
 
 const users: User[] = [
-  createUser('paul_miller', '🥘 Comfort food enthusiast & weekend baker', '5ddX4HwqJbbeqzgut2qeLXU1HfM2'),
+  createUser('matt_smith', '🥘 Comfort food enthusiast & weekend baker', '5ddX4HwqJbbeqzgut2qeLXU1HfM2'),
   createUser('sarah_parker', '🌮 Street food adventures & recipe collector'),
   createUser('mike_chen', '📸 Food photographer & noodle hunter'),
   createUser('alex_rodriguez', '🍝 Italian cuisine & pasta making'),
@@ -29,47 +29,40 @@ const users: User[] = [
   createUser('tom_nguyen', '🔪 Home cook exploring flavors')
 ];
 
-function generateLikes<T extends { likes_count: number }>(
-  items: T[],
-  users: User[],
-  maxLikes: number,
-  createLike: (item: T, user: User) => PostLike | CommentLike
-): (PostLike | CommentLike)[] {
-  const likes: (PostLike | CommentLike)[] = [];
-  
-  for (const item of items) {
-    const otherUsers = users.filter(u => 
-      'author_id' in item ? u.uid !== item.author_id : 
-      'user_id' in item ? u.uid !== item.user_id : true
-    );
-    
-    const likerCount = utils.randomInt(1, maxLikes);
-    const likers = utils.randomItems(otherUsers, likerCount);
-    
-    for (const liker of likers) {
-      likes.push(createLike(item, liker));
-      item.likes_count++;
-    }
-  }
-  
-  return likes;
-}
+const VIDEO_DESCRIPTIONS = [
+  "Smashed beef patty with caramelized onions, aged cheddar & secret sauce on brioche, served with crispy fries",
+  "San Marzano tomatoes simmered with garlic, basil & olive oil for 2hrs until rich and velvety",
+  "Cherry tomatoes blistered in cast iron with garlic, thyme & flaky salt, finished with aged balsamic",
+  "Steamed edamame pods tossed in Maldon salt, togarashi & sesame oil, served with charred lemon",
+  "Classic spaghetti cacio e pepe with fresh pecorino, cracked black pepper & pasta water emulsion",
+  "Handmade orecchiette with broccoli rabe, Italian sausage, chili flakes & toasted breadcrumbs",
+  "Fluffy Japanese soufflé pancakes with maple butter, fresh berries & whipped mascarpone cream",
+  "Ancient grain quinoa bowl with roasted vegetables, crispy chickpeas & lemon-tahini dressing",
+  "72-hour cold-fermented pizza dough with 00 flour, yielding perfect leopard-spotted crust",
+  "Charred broccoli florets with garlic confit, chili flakes & lemon zest, finished with aged parmesan",
+  "Artisanal sourdough toast topped with whipped honey-peanut butter, caramelized bananas & Maldon salt",
+  "Silky fettuccine alfredo with 24-month aged parmigiano, fresh cream & nutmeg, garnished with chives",
+  "Triple-layer chocolate cake with Valrhona ganache, salted caramel & fresh raspberry compote",
+  "Fresh guacamole with hand-crushed Hass avocados, lime, cilantro & serrano chilies, topped with pomegranate seeds",
+  "Wild mushroom soup with shiitake, porcini & cremini blend, finished with truffle oil & fresh thyme"
+];
 
 function generatePosts(): Post[] {
   const posts: Post[] = [];
   
-  for (let i = 0; i < 15; i++) {
+  VIDEO_DESCRIPTIONS.forEach((description, i) => {
     const author = users[i % users.length];
     posts.push({
       id: utils.generateId(),
       author_id: author.uid,
       video_id: i.toString(),
+      description,
       created_at: utils.randomTimestamp(i, i + 3),
       likes_count: 0,
       comments_count: 0
     });
     author.posts_count++;
-  }
+  });
   
   return posts;
 }
@@ -144,6 +137,32 @@ function generateFollows(users: User[]): Follow[] {
   }
   
   return follows;
+}
+
+function generateLikes<T extends { likes_count: number }>(
+  items: T[],
+  users: User[],
+  maxLikes: number,
+  createLike: (item: T, user: User) => PostLike | CommentLike
+): (PostLike | CommentLike)[] {
+  const likes: (PostLike | CommentLike)[] = [];
+  
+  for (const item of items) {
+    const otherUsers = users.filter(u => 
+      'author_id' in item ? u.uid !== item.author_id : 
+      'user_id' in item ? u.uid !== item.user_id : true
+    );
+    
+    const likerCount = utils.randomInt(1, maxLikes);
+    const likers = utils.randomItems(otherUsers, likerCount);
+    
+    for (const liker of likers) {
+      likes.push(createLike(item, liker));
+      item.likes_count++;
+    }
+  }
+  
+  return likes;
 }
 
 async function seedDatabase() {
