@@ -34,11 +34,12 @@ export type Post = {
 }
 
 export type Like = {
-  id: string
-  user_id: string
-  post_id: string
-  created_at: Timestamp
-}
+  id: string;
+  user_id: string;
+  created_at: Timestamp;
+};
+export type PostLike = Like & { post_id: string };
+export type CommentLike = Like & { comment_id: string };
 
 export type Comment = {
   id: string
@@ -48,3 +49,10 @@ export type Comment = {
   created_at: Timestamp
   likes_count: number
 }
+
+export type Follow = {
+  id: string;
+  follower_id: string;
+  following_id: string;
+  created_at: Timestamp;
+};

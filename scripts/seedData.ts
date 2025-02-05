@@ -1,51 +1,25 @@
-import { doc, setDoc, Timestamp, collection, getDocs, deleteDoc, getFirestore } from 'firebase/firestore';
-import { User, Post, Comment } from '@/lib/firebase';
-import { firebaseConfig } from '../config';
-import { initializeApp } from 'firebase/app';
+import { User, Post, Comment, Follow, PostLike, CommentLike } from '@/lib/firebase';
+import * as utils from './seedUtils';
 
 const MAX_LIKES_PER_POST = 6;
 const MAX_LIKES_PER_COMMENT = 3;
 const MAX_COMMENTS_PER_POST = 6;
-
-const db = getFirestore(initializeApp(firebaseConfig));
-
-const generateId = (length: number = 20) => Math.random().toString(36).substring(2, 2 + length);
-
-const getRandomFloat = (min: number, max: number) => (Math.random() * (max - min)) + min;
-const getRandomInt = (min: number, max: number) => Math.floor(getRandomFloat(min, max + 1));
-
-const getRandomItems = <T>(array: T[], n: number): T[] => {
-  const shuffled = [...array].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, n);
-};
-
-const ONE_DAY = 24 * 60 * 60 * 1000;
-const getRandomTimestamp = (minDaysAgo: number, maxDaysAgo: number): Timestamp => {
-  const randomDays = getRandomFloat(minDaysAgo, maxDaysAgo);
-  return Timestamp.fromDate(new Date(Date.now() - randomDays * ONE_DAY));
-};
-
-async function clearCollection(collectionName: string) {
-  const querySnapshot = await getDocs(collection(db, collectionName));
-  const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
-  await Promise.all(deletePromises);
-  console.log(`Cleared collection: ${collectionName}`);
-}
+const MAX_FOLLOWERS_PER_USER = 4;
 
 function createUser(username: string, bio: string, uid?: string): User {
   return {
-    uid: uid || generateId(),
+    uid: uid || utils.generateId(),
     username,
     avatar_url: `https://api.dicebear.com/7.x/avataaars/png?seed=${username}`,
     bio,
-    created_at: getRandomTimestamp(30, 60),
+    created_at: utils.randomTimestamp(30, 60),
     followers_count: 0,
     following_count: 0,
     posts_count: 0
   }
 }
 
-let users: User[] = [
+const users: User[] = [
   createUser('paul_miller', '🥘 Comfort food enthusiast & weekend baker', '5ddX4HwqJbbeqzgut2qeLXU1HfM2'),
   createUser('sarah_parker', '🌮 Street food adventures & recipe collector'),
   createUser('mike_chen', '📸 Food photographer & noodle hunter'),
@@ -55,16 +29,50 @@ let users: User[] = [
   createUser('tom_nguyen', '🔪 Home cook exploring flavors')
 ];
 
-let posts: Post[] = Array.from({ length: 15 }, (_, i) => ({
-  id: generateId(),
-  author_id: users[i % users.length].uid,
-  video_id: i.toString(),
-  created_at: getRandomTimestamp(i, i + 3),
-  likes_count: 0,
-  comments_count: 0
-}));
+function generateLikes<T extends { likes_count: number }>(
+  items: T[],
+  users: User[],
+  maxLikes: number,
+  createLike: (item: T, user: User) => PostLike | CommentLike
+): (PostLike | CommentLike)[] {
+  const likes: (PostLike | CommentLike)[] = [];
+  
+  for (const item of items) {
+    const otherUsers = users.filter(u => 
+      'author_id' in item ? u.uid !== item.author_id : 
+      'user_id' in item ? u.uid !== item.user_id : true
+    );
+    
+    const likerCount = utils.randomInt(1, maxLikes);
+    const likers = utils.randomItems(otherUsers, likerCount);
+    
+    for (const liker of likers) {
+      likes.push(createLike(item, liker));
+      item.likes_count++;
+    }
+  }
+  
+  return likes;
+}
 
-let comments: Comment[] = [];
+function generatePosts(): Post[] {
+  const posts: Post[] = [];
+  
+  for (let i = 0; i < 15; i++) {
+    const author = users[i % users.length];
+    posts.push({
+      id: utils.generateId(),
+      author_id: author.uid,
+      video_id: i.toString(),
+      created_at: utils.randomTimestamp(i, i + 3),
+      likes_count: 0,
+      comments_count: 0
+    });
+    author.posts_count++;
+  }
+  
+  return posts;
+}
 
 const COMMENTS = [
   "This looks absolutely delicious! 🤤",
@@ -89,87 +97,25 @@ const COMMENTS = [
   "Gordon Ramsay would approve 🔥"
 ];
 
-const getOtherUsers = (authorId: string) => 
-  users.filter(user => user.uid !== authorId);
-
-type PostLike = {
-  id: string;
-  user_id: string;
-  post_id: string;
-  created_at: Timestamp;
-};
-
-type CommentLike = {
-  id: string;
-  user_id: string;
-  comment_id: string;
-  created_at: Timestamp;
-};
-
-function generatePostLikes(): PostLike[] {
-  const likes: PostLike[] = [];
-  
-  for (const post of posts) {
-    const otherUsers = getOtherUsers(post.author_id);
-    const likerCount = getRandomInt(1, MAX_LIKES_PER_POST);
-    const likers = getRandomItems(otherUsers, likerCount);
-    
-    for (const liker of likers) {
-      const likeId = `${liker.uid}_${post.id}`;
-      likes.push({
-        id: likeId,
-        user_id: liker.uid,
-        post_id: post.id,
-        created_at: getRandomTimestamp(0, 7)
-      });
-      post.likes_count++;
-    }
-  }
-  
-  return likes;
-}
-
-function generateCommentLikes(): CommentLike[] {
-  const likes: CommentLike[] = [];
-  
-  for (const comment of comments) {
-    const otherUsers = getOtherUsers(comment.user_id);
-    const likerCount = getRandomInt(0, MAX_LIKES_PER_COMMENT);
-    const likers = getRandomItems(otherUsers, likerCount);
-    
-    for (const liker of likers) {
-      const likeId = `${liker.uid}_${comment.id}`;
-      likes.push({
-        id: likeId,
-        user_id: liker.uid,
-        comment_id: comment.id,
-        created_at: getRandomTimestamp(0, 7)
-      });
-      comment.likes_count++;
-    }
-  }
-  
-  return likes;
-}
-
 function generateComments(): Comment[] {
-  comments = [];
+  const comments: Comment[] = [];
   
-  for (const post of posts) {
-    const otherUsers = getOtherUsers(post.author_id);
-    const commenterCount = getRandomInt(1, MAX_COMMENTS_PER_POST);
-    const commenters = getRandomItems(otherUsers, commenterCount);
+  for (const post of generatePosts()) {
+    const otherUsers = users.filter(u => u.uid !== post.author_id);
+    const commenterCount = utils.randomInt(1, MAX_COMMENTS_PER_POST);
+    const commenters = utils.randomItems(otherUsers, commenterCount);
     
     for (const commenter of commenters) {
-      const commentId = generateId();
-      comments.push({
-        id: commentId,
+      const comment: Comment = {
+        id: utils.generateId(),
         post_id: post.id,
         user_id: commenter.uid,
-        text: getRandomItems(COMMENTS, 1)[0],
-        created_at: getRandomTimestamp(0, 7),
+        text: utils.randomItems(COMMENTS, 1)[0],
+        created_at: utils.randomTimestamp(0, 7),
         likes_count: 0
-      });
+      };
+      
+      comments.push(comment);
       post.comments_count++;
     }
   }
@@ -177,33 +123,68 @@ function generateComments(): Comment[] {
   return comments;
 }
 
-function updateUserCounts() {
+function generateFollows(users: User[]): Follow[] {
+  const follows: Follow[] = [];
+  
   for (const user of users) {
-    user.posts_count = posts.filter(p => p.author_id === user.uid).length;
+    const otherUsers = users.filter(u => u.uid !== user.uid);
+    const followCount = utils.randomInt(1, MAX_FOLLOWERS_PER_USER);
+    const followedUsers = utils.randomItems(otherUsers, followCount);
+    
+    for (const followedUser of followedUsers) {
+      follows.push({
+        id: `${user.uid}_${followedUser.uid}`,
+        follower_id: user.uid,
+        following_id: followedUser.uid,
+        created_at: utils.randomTimestamp(0, 30)
+      });
+      user.following_count++;
+      followedUser.followers_count++;
+    }
   }
+  
+  return follows;
 }
 
 async function seedDatabase() {
   try {
-    generateComments();
-    const postLikes = generatePostLikes();
-    const commentLikes = generateCommentLikes();
-    updateUserCounts();
+    const posts = generatePosts();
+    const comments = generateComments();
+    
+    const postLikes = generateLikes(
+      posts, 
+      users, 
+      MAX_LIKES_PER_POST,
+      (post, user) => ({
+        id: `${user.uid}_${post.id}`,
+        user_id: user.uid,
+        post_id: post.id,
+        created_at: utils.randomTimestamp(0, 7)
+      })
+    );
+    
+    const commentLikes = generateLikes(
+      comments,
+      users,
+      MAX_LIKES_PER_COMMENT,
+      (comment, user) => ({
+        id: `${user.uid}_${comment.id}`,
+        user_id: user.uid,
+        comment_id: comment.id,
+        created_at: utils.randomTimestamp(0, 7)
+      })
+    );
 
-    await clearCollection('users');
-    for (const user of users) await setDoc(doc(db, 'users', user.uid), user);
+    const follows = generateFollows(users);
 
-    await clearCollection('posts');
-    for (const post of posts) await setDoc(doc(db, 'posts', post.id), post);
-
-    await clearCollection('comments');
-    for (const comment of comments) await setDoc(doc(db, 'comments', comment.id), comment);
-
-    await clearCollection('post_likes');
-    for (const like of postLikes) await setDoc(doc(db, 'post_likes', like.id), like);
-
-    await clearCollection('comment_likes');
-    for (const like of commentLikes) await setDoc(doc(db, 'comment_likes', like.id), like);
+    await Promise.all([
+      utils.seedCollection('users', users),
+      utils.seedCollection('posts', posts),
+      utils.seedCollection('comments', comments),
+      utils.seedCollection('post_likes', postLikes as PostLike[]),
+      utils.seedCollection('comment_likes', commentLikes as CommentLike[]),
+      utils.seedCollection('follows', follows)
+    ]);
 
     console.log('Seeding completed successfully');
     process.exit(0);
