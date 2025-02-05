@@ -3,13 +3,11 @@ import { ThemedText as Text } from '@/components/ThemedText';
 import { ThemedView as View } from '@/components/ThemedView';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserStore } from '@/lib/userStore';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/contexts/AuthContext';
-import { router } from 'expo-router';
 
 type ProfileProps = {
   userId: string;
-  showBackButton?: boolean;
+  headerLeft?: React.ReactNode;
+  headerRight?: React.ReactNode;
 };
 
 const StatDisplay = ({ value, label }: { value: number; label: string }) => (
@@ -19,37 +17,19 @@ const StatDisplay = ({ value, label }: { value: number; label: string }) => (
   </View>
 );
 
-export function Profile({ userId, showBackButton = false }: ProfileProps) {
-  const { signOut } = useAuth();
+export function Profile({ userId, headerLeft, headerRight }: ProfileProps) {
   const { users } = useUserStore();
   const user = users[userId];
 
   if (!user) return null;
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      router.replace('/(auth)/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView}>
         {/* Header with navigation */}
         <View style={styles.header}>
-          {showBackButton ? (
-            <Pressable onPress={() => router.back()} style={styles.backButton}>
-              <Ionicons name="chevron-back" size={24} color="#fff" />
-            </Pressable>
-          ) : (
-            <View style={{ flex: 1 }} />
-          )}
-          <Pressable onPress={handleLogout} style={styles.logoutButton}>
-            <Ionicons name="menu-outline" size={24} color="#fff" />
-          </Pressable>
+          {headerLeft ?? <View style={{ width: 40 }} />}
+          {headerRight}
         </View>
 
         {/* Profile Info */}
@@ -100,12 +80,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 16,
-  },
-  backButton: {
-    padding: 8,
-  },
-  logoutButton: {
-    padding: 8,
   },
   profileInfo: {
     alignItems: 'center',
