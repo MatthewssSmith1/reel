@@ -1,9 +1,7 @@
-import { collection, getDocs, orderBy, query, where, addDoc } from 'firebase/firestore'
-import { Timestamp } from 'firebase/firestore'
-import { Comment } from '@/lib/firebase'
+import { collection, getDocs, orderBy, query, where, addDoc, increment, doc, updateDoc, Timestamp } from 'firebase/firestore'
+import { Comment, auth, db } from '@/lib/firebase'
+import { usePostStore } from '@/lib/postStore'
 import { create } from 'zustand'
-import { auth } from '@/lib/firebase'
-import { db } from '@/lib/firebase'
 
 type CommentStore = {
   comments: Comment[] | null
@@ -14,7 +12,7 @@ type CommentStore = {
   submitComment: (postId: string, text: string) => Promise<void>
 }
 
-export const useCommentStore = create<CommentStore>((set, get) => ({
+export const useCommentStore = create<CommentStore>((set) => ({
   comments: null,
   isLoading: false,
   isMessagesOpen: false,
@@ -42,6 +40,8 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
     
     try {
       const commentsRef = collection(db, 'comments');
+      const postRef = doc(db, 'posts', postId);
+      
       const newComment: Omit<Comment, 'id'> = {
         post_id: postId,
         user_id: auth.currentUser!.uid,
@@ -51,7 +51,12 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
       };
       
       const docRef = await addDoc(commentsRef, newComment);
+      await updateDoc(postRef, {
+        comments_count: increment(1)
+      });
+      
       const comment = { id: docRef.id, ...newComment } as Comment;
+      usePostStore.getState().offsetCommentCount(postId);
       
       set(state => ({
         comments: state.comments ? [...state.comments, comment] : [comment]

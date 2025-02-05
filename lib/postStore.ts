@@ -1,21 +1,22 @@
 import { collection, getDocs, orderBy, query } from 'firebase/firestore'
 import { useCommentStore } from '@/lib/commentStore'
+import { Post, db } from '@/lib/firebase'
 import { create } from 'zustand'
-import { Post } from '@/lib/firebase'
-import { db } from '@/lib/firebase'
 
 type PostStore = {
   posts: Post[]
   isLoading: boolean
   currentPost: Post | null
-  loadPosts: () => Promise<void>
   setCurrentPost: (post: Post) => void
+  loadPosts: () => Promise<void>
+  offsetCommentCount: (postId: string, diff?: number) => void
 }
 
 export const usePostStore = create<PostStore>((set, get) => ({
   posts: [],
   isLoading: false,
   currentPost: null,
+  setCurrentPost: (post: Post) => set({ currentPost: post }),
   loadPosts: async () => {
     set({ isLoading: true })
     try {
@@ -33,5 +34,14 @@ export const usePostStore = create<PostStore>((set, get) => ({
       console.log(error)
     }
   },
-  setCurrentPost: (post: Post) => set({ currentPost: post }),
+  offsetCommentCount: (postId: string, diff = 1) => set(state => ({
+    posts: state.posts.map(post => 
+      post.id === postId 
+        ? { ...post, comments_count: post.comments_count + diff }
+        : post
+    ),
+    currentPost: state.currentPost?.id === postId
+      ? { ...state.currentPost, comments_count: state.currentPost.comments_count + diff }
+      : state.currentPost
+  })),
 }))

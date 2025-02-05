@@ -1,7 +1,7 @@
 import { StyleSheet, View, Image } from 'react-native';
 import { Comment as CommentType } from '@/lib/firebase';
 import { useUserStore } from '@/lib/userStore'
-import { formatCount } from '@/lib/utils';
+import { formatCount, formatTimestamp } from '@/lib/utils';
 import { ThemedText } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -19,7 +19,7 @@ export function Comment({ comment }: { comment: CommentType }) {
       <View style={styles.content}>
         <View style={styles.header}>
           <ThemedText style={styles.username}>{user.username}</ThemedText>
-          <ThemedText style={styles.timestamp}>2h</ThemedText>
+          <ThemedText style={styles.timestamp}>{formatTimestamp(comment.created_at)}</ThemedText>
         </View>
         <ThemedText style={styles.text}>{comment.text}</ThemedText>
       </View>

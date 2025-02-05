@@ -47,6 +47,10 @@ export function CommentsSheet() {
     paddingBottom: withTiming(keyboardPadding.value, { duration: 300 }),
   }));
 
+  const rInputStyle = useAnimatedStyle(() => ({
+    paddingBottom: keyboardPadding.value > 0 ? 10 : Math.max(bottom, 10),
+  }));
+
   if (!isMessagesOpen || !currentPost) return null;
 
   return (
@@ -56,18 +60,16 @@ export function CommentsSheet() {
     >
       <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
       <View style={styles.sheet}>
-        <View style={styles.header}>
-          <ThemedText style={styles.title}>{comments?.length} comments</ThemedText>
-          <TouchableOpacity 
-            style={styles.closeButton} 
-            onPress={() => {
-              Keyboard.dismiss();
-              toggleMessages(false);
-            }}
-          >
-            <Ionicons name="close" color="white" size={24} />
-          </TouchableOpacity>
-        </View>
+        <ThemedText style={styles.title}>{comments?.length} comments</ThemedText>
+        <TouchableOpacity 
+          style={styles.closeButton} 
+          onPress={() => {
+            Keyboard.dismiss();
+            toggleMessages(false);
+          }}
+        >
+          <Ionicons name="close" color="white" size={18} />
+        </TouchableOpacity>
         
         <FlatList
           data={comments}
@@ -76,11 +78,11 @@ export function CommentsSheet() {
             <Comment comment={item} />
           )}
           style={styles.commentsList}
-          contentContainerStyle={{ paddingBottom: bottom + 60 }}
+          contentContainerStyle={{ paddingTop: 0, paddingBottom: bottom + 60 }}
           keyboardShouldPersistTaps="handled"
         />
 
-        <View style={[styles.inputContainer, { paddingBottom: Math.max(bottom, 10) }]}>
+        <Animated.View style={[styles.inputContainer, rInputStyle]}>
           <TextInput
             style={styles.input}
             placeholder="Add a comment..."
@@ -98,7 +100,7 @@ export function CommentsSheet() {
           >
             <Ionicons name="paper-plane" color="white" size={20} />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </View>
     </Animated.View>
   );
@@ -121,21 +123,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(27, 27, 27, 0.9)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingTop: 36,
   },
   title: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
     color: 'white',
+    position: 'absolute',
+    top: 10,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    zIndex: 1,
   },
   closeButton: {
     padding: 4,
+    position: 'absolute',
+    top: 10,
+    right: 15,
+    zIndex: 1,
   },
   inputContainer: {
     position: 'absolute',
