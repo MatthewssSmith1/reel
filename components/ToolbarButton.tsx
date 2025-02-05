@@ -1,54 +1,37 @@
 import { StyleSheet, View, Pressable, Text } from 'react-native';
 import { IconSymbol, IconSymbolName } from '@/components/ui/IconSymbol';
 import { formatCount } from '@/lib/utils';
+import { TouchableOpacity } from 'react-native';
 
-interface ToolbarButtonProps {
+export type ToolbarButtonProps = {
   name: IconSymbolName;
-  onPress?: () => void;
   count?: number;
-}
+  color?: string;
+  onPress?: () => void;
+};
 
-export function ToolbarButton({ name, onPress, count }: ToolbarButtonProps) {
+export function ToolbarButton({ name, count, color = '#fff', onPress }: ToolbarButtonProps) {
   return (
-    <View style={styles.wrapper}>
-      <Pressable 
-        style={({ pressed }) => [
-          styles.button,
-          pressed && { opacity: 0.7 }
-        ]}
-        onPress={onPress}
-        android_ripple={{ color: 'rgba(255, 255, 255, 0.3)', borderless: true }}
-      >
-        <IconSymbol 
-          name={name} 
-          size={38} 
-          color={"white"} 
-        />
-      </Pressable>
+    <TouchableOpacity style={styles.container} onPress={onPress}>
+      <IconSymbol 
+        name={name} 
+        size={28} 
+        color={color} 
+      />
       {count !== undefined && (
-        <Text style={styles.count}>{formatCount(count)}</Text>
+        <Text style={styles.count}>{count}</Text>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
+  container: {
     alignItems: 'center',
-  },
-  button: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   count: {
-    color: 'white',
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 0,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 1,
+    color: '#fff',
+    fontSize: 12,
+    marginTop: 4,
   },
 }); 

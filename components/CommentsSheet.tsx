@@ -1,12 +1,12 @@
-import { StyleSheet, TouchableOpacity, TextInput, View, FlatList } from 'react-native';
-import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { StyleSheet, TouchableOpacity, TextInput, View, FlatList, Platform, Keyboard } from 'react-native';
+import Animated, { useAnimatedStyle, withTiming, useSharedValue } from 'react-native-reanimated';
+import { useState, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getScreenHeight } from '@/lib/utils';
 import { useCommentStore } from '@/lib/commentStore';
 import { usePostStore } from '@/lib/postStore';
 import { IconSymbol } from './ui/IconSymbol';
 import { ThemedText } from './ThemedText';
-import { useState } from 'react';
 import { BlurView } from 'expo-blur';
 import { Comment } from './Comment';
 
@@ -15,11 +15,36 @@ export function CommentsSheet() {
   const { currentPost } = usePostStore();
   const [comment, setComment] = useState('');
   const { bottom } = useSafeAreaInsets();
+  
+  const keyboardPadding = useSharedValue(0);
+  const sheetHeight = useSharedValue(getScreenHeight() * 0.7);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        keyboardPadding.value = e.endCoordinates.height;
+        sheetHeight.value = getScreenHeight() * 0.9;
+      }
+    );
+    
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        keyboardPadding.value = 0;
+        sheetHeight.value = getScreenHeight() * 0.7;
+      }
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const rStyle = useAnimatedStyle(() => ({
-    transform: [{ 
-      translateY: withTiming(0, { duration: 300 })
-    }],
+    height: withTiming(sheetHeight.value, { duration: 300 }),
+    paddingBottom: withTiming(keyboardPadding.value, { duration: 300 }),
   }));
 
   if (!isMessagesOpen || !currentPost) return null;
@@ -30,12 +55,15 @@ export function CommentsSheet() {
       pointerEvents="box-none"
     >
       <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
-      <Animated.View style={[styles.sheet, { paddingBottom: bottom }]}>
+      <View style={styles.sheet}>
         <View style={styles.header}>
           <ThemedText style={styles.title}>{comments?.length} comments</ThemedText>
           <TouchableOpacity 
             style={styles.closeButton} 
-            onPress={() => toggleMessages(false)}
+            onPress={() => {
+              Keyboard.dismiss();
+              toggleMessages(false);
+            }}
           >
             <IconSymbol name="xmark" color="white" size={24} />
           </TouchableOpacity>
@@ -48,10 +76,11 @@ export function CommentsSheet() {
             <Comment comment={item} />
           )}
           style={styles.commentsList}
-          contentContainerStyle={styles.commentsContent}
+          contentContainerStyle={{ paddingBottom: bottom + 60 }}
+          keyboardShouldPersistTaps="handled"
         />
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, { paddingBottom: Math.max(bottom, 10) }]}>
           <TextInput
             style={styles.input}
             placeholder="Add a comment..."
@@ -70,14 +99,13 @@ export function CommentsSheet() {
             <IconSymbol name="paperplane.fill" color="white" size={20} />
           </TouchableOpacity>
         </View>
-      </Animated.View>
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: getScreenHeight() * 0.7,
     width: '100%',
     position: 'absolute',
     bottom: 0,
@@ -93,13 +121,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(27, 27, 27, 0.9)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 5,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
   },
   title: {
     fontSize: 20,
@@ -118,7 +146,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 15,
     paddingVertical: 10,
-    backgroundColor: 'rgba(40, 40, 40, 0.9)',
+    backgroundColor: 'rgba(40, 40, 40, 0.95)',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#333',
   },
@@ -143,8 +171,5 @@ const styles = StyleSheet.create({
   },
   commentsList: {
     flex: 1,
-  },
-  commentsContent: {
-    paddingTop: 8,
   },
 }); 

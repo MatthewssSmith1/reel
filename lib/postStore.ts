@@ -1,4 +1,5 @@
 import { collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { useCommentStore } from '@/lib/commentStore'
 import { create } from 'zustand'
 import { Post } from '@/lib/firebase'
 import { db } from '@/lib/firebase'
@@ -22,7 +23,12 @@ export const usePostStore = create<PostStore>((set, get) => ({
       const q = query(postsRef, orderBy('created_at', 'desc'))
       const snapshot = await getDocs(q)
       const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post))
-      set({ posts, isLoading: false })
+      if (posts.length > 0) {
+        set({ posts, currentPost: posts[0], isLoading: false })
+        await useCommentStore.getState().loadComments(posts[0].id)
+      } else {
+        set({ posts, isLoading: false })
+      }
     } catch (error) {
       console.log(error)
     }

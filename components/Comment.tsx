@@ -73,6 +73,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingTop: 2,
+    paddingRight: 10,
   },
   likes: {
     fontSize: 12,

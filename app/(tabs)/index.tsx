@@ -9,14 +9,10 @@ import { VideoView } from '@/components/VideoView';
 import { Video } from 'expo-av';
 
 export default function FeedScreen() {
-  const { posts, isLoading, loadPosts, setCurrentPost } = usePostStore();
+  const { posts, isLoading, setCurrentPost } = usePostStore();
   const { toggleMessages, loadComments } = useCommentStore();
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
   const scrollRef = useRef<ScrollView>(null);
-
-  useEffect(() => {
-    if (!posts.length) loadPosts();
-  }, [posts.length]);
 
   const onScroll = useCallback(({ nativeEvent }: any) => {
     const index = Math.round(nativeEvent.contentOffset.y / getScreenHeight());

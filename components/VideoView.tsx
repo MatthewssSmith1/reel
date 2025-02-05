@@ -1,8 +1,10 @@
 import { getScreenHeight, getScreenWidth } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 import { Video, ResizeMode } from 'expo-av';
 import { StyleSheet, View } from 'react-native';
 import { useCommentStore } from '@/lib/commentStore';
 import { ToolbarButton } from './ToolbarButton';
+import { useLikeStore } from '@/lib/likeStore';
 import { Post } from '@/lib/firebase';
 
 const VIDEO_ASSETS: { [key: string]: number } = {
@@ -30,6 +32,13 @@ type VideoViewProps = {
 
 export function VideoView({ post, videoRef }: VideoViewProps) {
   const { toggleMessages } = useCommentStore();
+  const { toggleLike, isLiked } = useLikeStore();
+  const liked = isLiked(post.id);
+  const [otherUsersLikeCount, setOtherUsersLikeCount] = useState(0);
+
+  useEffect(() => {
+    setOtherUsersLikeCount(post.likes_count - (liked ? 1 : 0));
+  }, [post.id]);
 
   return (
     <View style={styles.videoContainer}>
@@ -43,7 +52,12 @@ export function VideoView({ post, videoRef }: VideoViewProps) {
       />
       <View style={styles.toolbarContainer}>
         <ToolbarButton name="person.circle.fill" />
-        <ToolbarButton name="heart.fill" count={post.likes_count} />
+        <ToolbarButton 
+          name="heart.fill" 
+          count={otherUsersLikeCount + (liked ? 1 : 0)} 
+          color={liked ? '#FF2D55' : '#fff'}
+          onPress={() => toggleLike(post.id)}
+        />
         <ToolbarButton 
           name="message.fill" 
           count={post.comments_count} 

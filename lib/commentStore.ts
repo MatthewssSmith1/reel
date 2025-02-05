@@ -28,7 +28,7 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
         orderBy('created_at', 'desc')
       )
       const snapshot = await getDocs(q)
-      const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment))
+      const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment)).reverse()
       
       set({ comments, isLoading: false })
     } catch (error) {
@@ -54,7 +54,7 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
       const comment = { id: docRef.id, ...newComment } as Comment;
       
       set(state => ({
-        comments: state.comments ? [comment, ...state.comments] : [comment]
+        comments: state.comments ? [...state.comments, comment] : [comment]
       }));
     } catch (error) {
       console.error('Error submitting comment:', error);
