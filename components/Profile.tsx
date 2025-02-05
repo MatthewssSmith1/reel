@@ -7,6 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserStore } from '@/lib/userStore';
 import { usePostStore } from '@/lib/postStore';
 import { router } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { usePostLikeStore } from '@/lib/likeStore';
 
 type ProfileProps = {
   userId: string;
@@ -23,11 +26,16 @@ const StatDisplay = ({ value, label }: { value: number; label: string }) => (
 
 export function Profile({ userId, headerLeft, headerRight }: ProfileProps) {
   const { users, authUser } = useUserStore();
+  const isAuthUser = authUser?.uid === userId;
+
   const { posts } = usePostStore();
   const { isFollowing, toggleFollow } = useFollowStore();
+  const { likedItems } = usePostLikeStore();
+  const [activeTab, setActiveTab] = useState<'posts' | 'likes'>('posts');
 
   const userPosts = posts.filter(post => post.author_id === userId);
-  const isAuthUser = authUser?.uid === userId;
+  const likedPosts = posts.filter(post => likedItems.get(post.id));
+  const displayedPosts = activeTab === 'posts' ? userPosts : likedPosts;
 
   const user = users[userId];
   if (!user || !authUser) return null;
@@ -73,8 +81,47 @@ export function Profile({ userId, headerLeft, headerRight }: ProfileProps) {
         {/* Bio */}
         <Text style={styles.bio}>{user.bio}</Text>
 
+        {/* Tab Bar - only shown on auth user's profile */}
+        {isAuthUser && (
+          <View style={styles.tabBar}>
+            <Pressable 
+              style={[styles.tab, activeTab === 'posts' && styles.activeTab]} 
+              onPress={() => setActiveTab('posts')}
+            >
+              <MaterialIcons 
+                name="grid-on" 
+                size={24} 
+                color={activeTab === 'posts' ? '#fff' : '#aaa'} 
+              />
+            </Pressable>
+            <Pressable 
+              style={[styles.tab, activeTab === 'likes' && styles.activeTab]}
+              onPress={() => setActiveTab('likes')}
+            >
+              <MaterialIcons 
+                name="favorite" 
+                size={24} 
+                color={activeTab === 'likes' ? '#fff' : '#aaa'} 
+              />
+            </Pressable>
+          </View>
+        )}
+
         {/* Posts Grid */}
-        <ThumbnailGrid posts={userPosts} isScrollable={false} />
+        <ThumbnailGrid 
+          posts={isAuthUser ? displayedPosts : userPosts} 
+          isScrollable={false}
+          onPostPress={(post) => {
+            router.push({
+              pathname: '/(modals)/post',
+              params: { 
+                postId: post.id, 
+                userId: post.author_id,
+                type: isAuthUser && activeTab === 'likes' ? 'liked' : 'posts'
+              }
+            });
+          }}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -143,5 +190,21 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  tabBar: {
+    flexDirection: 'row',
+    // borderTopWidth: StyleSheet.hairlineWidth,
+    // borderBottomWidth: StyleSheet.hairlineWidth,
+    // borderColor: '#ccc',
+    marginBottom: 1,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    // borderBottomColor: '#000',
   },
 }); 

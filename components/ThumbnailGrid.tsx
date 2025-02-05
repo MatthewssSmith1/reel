@@ -10,13 +10,15 @@ type ThumbnailGridProps = {
   ListEmptyComponent?: React.ComponentType | React.ReactElement;
   onScroll?: () => void;
   isScrollable?: boolean;
+  onPostPress?: (post: Post) => void;
 };
 
 export function ThumbnailGrid({ 
   posts, 
   ListEmptyComponent, 
   onScroll, 
-  isScrollable = true 
+  isScrollable = true,
+  onPostPress 
 }: ThumbnailGridProps) {
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
 
@@ -41,10 +43,18 @@ export function ThumbnailGrid({
   }, [posts]);
 
   const handlePostPress = (post: Post) => {
-    router.push({
-      pathname: '/(modals)/post',
-      params: { postId: post.id, userId: post.author_id }
-    });
+    if (onPostPress) {
+      onPostPress(post);
+    } else {
+      router.push({
+        pathname: '/(modals)/post',
+        params: { 
+          postId: post.id, 
+          userId: post.author_id,
+          type: 'posts'
+        }
+      });
+    }
   };
 
   const renderThumbnail = (post: Post) => (

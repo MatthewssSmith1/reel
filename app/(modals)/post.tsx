@@ -7,23 +7,30 @@ import { usePostStore } from '@/lib/postStore';
 import { VideoView } from '@/components/VideoView';
 import { Ionicons } from '@expo/vector-icons';
 import { Video } from 'expo-av';
+import { usePostLikeStore } from '@/lib/likeStore';
 
 export default function PostModal() {
-  const { postId, userId } = useLocalSearchParams<{ postId: string; userId: string }>();
+  const { postId, userId, type } = useLocalSearchParams<{ 
+    postId: string; 
+    userId: string;
+    type: 'posts' | 'liked';
+  }>();
   const { posts } = usePostStore();
+  const { likedItems } = usePostLikeStore();
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
   const scrollRef = useRef<ScrollView>(null);
 
-  const userPosts = posts
-    .filter(p => p.author_id === userId)
-    .sort((a, b) => b.created_at.seconds - a.created_at.seconds);
+  const displayedPosts = type === 'liked'
+    ? posts.filter(p => likedItems.get(p.id))
+    : posts.filter(p => p.author_id === userId);
   
-  const initialIndex = userPosts.findIndex(p => p.id === postId);
+  const sortedPosts = displayedPosts.sort((a, b) => b.created_at.seconds - a.created_at.seconds);
+  const initialIndex = sortedPosts.findIndex(p => p.id === postId);
   if (initialIndex === -1) return null;
 
   const onScroll = useCallback(({ nativeEvent }: any) => {
     const index = Math.round(nativeEvent.contentOffset.y / getScreenHeight());
-    const post = userPosts[index];
+    const post = sortedPosts[index];
     if (!post) return;
 
     Object.entries(videoRefs.current).forEach(([id, video]) => {
@@ -31,7 +38,7 @@ export default function PostModal() {
       if (id === post.id) video.playAsync();
       else video.pauseAsync();
     });
-  }, [userPosts]);
+  }, [sortedPosts]);
 
   return (
     <View style={styles.container}>
@@ -53,7 +60,7 @@ export default function PostModal() {
           snapToAlignment="start"
           contentOffset={{ x: 0, y: initialIndex * getScreenHeight() }}
         >
-          {userPosts.map((post, index) => (
+          {sortedPosts.map((post, index) => (
             <VideoView
               key={post.id}
               post={post}
