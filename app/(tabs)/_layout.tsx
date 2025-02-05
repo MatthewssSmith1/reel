@@ -5,12 +5,11 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useUserStore } from '@/lib/userStore';
 import { useLikeStore } from '@/lib/likeStore';
 import { usePostStore } from '@/lib/postStore';
-import { IconSymbol } from '@/docs/IconSymbol';
 import { HapticTab } from '@/components/HapticTab';
+import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();

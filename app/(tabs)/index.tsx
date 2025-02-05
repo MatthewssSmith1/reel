@@ -1,6 +1,6 @@
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef } from 'react';
 import { useCommentStore } from '@/lib/commentStore';
 import { getScreenHeight } from '@/lib/utils';
 import { CommentsSheet } from '@/components/CommentsSheet';
@@ -49,10 +49,11 @@ export default function FeedScreen() {
         snapToInterval={getScreenHeight()}
         snapToAlignment="start"
       >
-        {posts.map(post => (
+        {posts.map((post, index) => (
           <VideoView
             key={post.id}
             post={post}
+            shouldPlay={index === 0}
             videoRef={ref => (videoRefs.current[post.id] = ref)}
           />
         ))}

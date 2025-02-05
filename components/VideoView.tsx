@@ -1,11 +1,13 @@
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { getScreenHeight, getScreenWidth } from '@/lib/utils';
+import { ref, getDownloadURL } from 'firebase/storage';
 import { useEffect, useState } from 'react';
 import { Video, ResizeMode } from 'expo-av';
-import { StyleSheet, View } from 'react-native';
 import { useCommentStore } from '@/lib/commentStore';
 import { ToolbarButton } from './ToolbarButton';
+import { Post, storage } from '@/lib/firebase';
 import { useLikeStore } from '@/lib/likeStore';
-import { Post } from '@/lib/firebase';
+import { ThemedText } from './ThemedText';
 
 const VIDEO_ASSETS: { [key: string]: number } = {
   '0': require('../assets/videos/0.mp4'),
@@ -27,14 +29,37 @@ const VIDEO_ASSETS: { [key: string]: number } = {
 
 type VideoViewProps = {
   post: Post;
+  shouldPlay: boolean;
   videoRef: (ref: Video | null) => void;
 };
 
-export function VideoView({ post, videoRef }: VideoViewProps) {
+export function VideoView({ post, shouldPlay, videoRef }: VideoViewProps) {
   const { toggleMessages } = useCommentStore();
   const { toggleLike, isLiked } = useLikeStore();
-  const liked = isLiked(post.id);
   const [otherUsersLikeCount, setOtherUsersLikeCount] = useState(0);
+  // const [videoUri, setVideoUri] = useState<string | null>(null);
+  // const [isLoading, setIsLoading] = useState(true);
+  // const [error, setError] = useState<string | null>(null);
+
+  const liked = isLiked(post.id);
+
+  // useEffect(() => {
+  //   const loadVideo = async () => {
+  //     try {
+  //       setIsLoading(true);
+  //       setError(null);
+  //       const videoRef = ref(storage, `videos/${post.video_id}.mp4`);
+  //       const url = await getDownloadURL(videoRef);
+  //       setVideoUri(url);
+  //     } catch (error) {
+  //       console.error('Error loading video:', error);
+  //       setError('Failed to load video');
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+  //   loadVideo();
+  // }, [post.video_id]);
 
   useEffect(() => {
     setOtherUsersLikeCount(post.likes_count - (liked ? 1 : 0));
@@ -42,14 +67,27 @@ export function VideoView({ post, videoRef }: VideoViewProps) {
 
   return (
     <View style={styles.videoContainer}>
-      <Video
-        ref={videoRef}
-        source={VIDEO_ASSETS[post.video_id]}
-        style={styles.video}
-        resizeMode={ResizeMode.COVER}
-        isLooping
-        shouldPlay={false}
-      />
+      {/* {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
+      )}
+      {error && (
+        <View style={styles.errorContainer}>
+          <ThemedText style={styles.errorText}>{error}</ThemedText>
+        </View>
+      )}
+      {videoUri && ( */}
+        <Video
+          ref={videoRef}
+          // source={{ uri: videoUri }}
+          source={VIDEO_ASSETS[post.video_id]}
+          style={styles.video}
+          resizeMode={ResizeMode.COVER}
+          isLooping
+          shouldPlay={shouldPlay}
+        />
+      {/* )} */}
       <View style={styles.toolbarContainer}>
         <ToolbarButton name="person-circle" />
         <ToolbarButton 
@@ -82,6 +120,20 @@ const styles = StyleSheet.create({
     right: 16,
     bottom: 110,
     alignItems: 'center',
-    // gap: 20,
+  },
+  loadingContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: '#fff',
+    textAlign: 'center',
   },
 }); 
