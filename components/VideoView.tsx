@@ -4,7 +4,6 @@ import { ref, getDownloadURL } from 'firebase/storage';
 import { useEffect, useState } from 'react';
 import { useOptimisticLikes } from '@/hooks/useOptimisticLikes';
 import { Video, ResizeMode } from 'expo-av';
-import { useCommentStore } from '@/lib/commentStore';
 import { ToolbarButton } from './ToolbarButton';
 import { Post, storage } from '@/lib/firebase';
 import { ThemedText } from './ThemedText';
@@ -36,7 +35,6 @@ type VideoViewProps = {
 
 // commented lines are for loading videos from the storage bucket (excluded to save on bandwidth by using static assets for now)
 export function VideoView({ post, shouldPlay, videoRef }: VideoViewProps) {
-  const { toggleMessages } = useCommentStore();
   const { liked, optimisticCount, toggleLike } = useOptimisticLikes(post.id, post.likes_count, 'post');
   // const [videoUri, setVideoUri] = useState<string | null>(null);
   // const [isLoading, setIsLoading] = useState(true);
@@ -64,6 +62,13 @@ export function VideoView({ post, shouldPlay, videoRef }: VideoViewProps) {
     router.push({
       pathname: '/(modals)/user-profile',
       params: { userId: post.author_id }
+    });
+  };
+
+  const handleCommentsPress = () => {
+    router.push({
+      pathname: '/(modals)/comments',
+      params: { postId: post.id }
     });
   };
 
@@ -101,7 +106,7 @@ export function VideoView({ post, shouldPlay, videoRef }: VideoViewProps) {
         <ToolbarButton 
           name="chatbubble" 
           count={post.comments_count} 
-          onPress={() => toggleMessages(true)}
+          onPress={handleCommentsPress}
         />
       </View>
     </View>

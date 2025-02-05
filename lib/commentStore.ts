@@ -6,16 +6,13 @@ import { create } from 'zustand'
 type CommentStore = {
   comments: Comment[] | null
   isLoading: boolean
-  isMessagesOpen: boolean
   loadComments: (postId: string) => Promise<void>
-  toggleMessages: (isOpen: boolean) => void
   submitComment: (postId: string, text: string) => Promise<void>
 }
 
 export const useCommentStore = create<CommentStore>((set) => ({
   comments: null,
   isLoading: false,
-  isMessagesOpen: false,
   loadComments: async (postId: string) => {
     set({ isLoading: true })
     try {
@@ -34,7 +31,6 @@ export const useCommentStore = create<CommentStore>((set) => ({
       set({ isLoading: false })
     }
   },
-  toggleMessages: (isOpen: boolean) => set({ isMessagesOpen: isOpen }),
   submitComment: async (postId: string, text: string) => {
     if (!text.trim()) return;
     

@@ -1,16 +1,13 @@
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { useCallback, useRef } from 'react';
-import { useCommentStore } from '@/lib/commentStore';
 import { getScreenHeight } from '@/lib/utils';
-import { CommentsSheet } from '@/components/CommentsSheet';
 import { usePostStore } from '@/lib/postStore';
 import { VideoView } from '@/components/VideoView';
 import { Video } from 'expo-av';
 
 export default function FeedScreen() {
   const { posts, isLoading, setCurrentPost } = usePostStore();
-  const { toggleMessages, loadComments } = useCommentStore();
   const videoRefs = useRef<{ [key: string]: Video | null }>({});
   const scrollRef = useRef<ScrollView>(null);
 
@@ -26,9 +23,6 @@ export default function FeedScreen() {
     });
     
     setCurrentPost(post);
-
-    toggleMessages(false);
-    loadComments(post.id);
   }, [posts, setCurrentPost]);
 
   if (isLoading) return (
@@ -58,7 +52,6 @@ export default function FeedScreen() {
           />
         ))}
       </ScrollView>
-      <CommentsSheet />
     </GestureHandlerRootView>
   );
 }

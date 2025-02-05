@@ -1,20 +1,17 @@
 import { usePostLikeStore, useCommentLikeStore } from '@/lib/likeStore';
 import React, { useEffect } from 'react';
-import { useCommentStore } from '@/lib/commentStore';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useUserStore } from '@/lib/userStore';
 import { usePostStore } from '@/lib/postStore';
 import { HapticTab } from '@/components/HapticTab';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { Colors } from '@/constants/Colors';
 import { Tabs } from 'expo-router';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { isMessagesOpen } = useCommentStore();
   const { loadUsers } = useUserStore();
   const { loadLikes: loadPostLikes } = usePostLikeStore();
   const { loadLikes: loadCommentLikes } = useCommentLikeStore();
@@ -37,15 +34,6 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            position: 'absolute',
-            display: isMessagesOpen ? 'none' : 'flex',
-          },
-          default: {
-            display: isMessagesOpen ? 'none' : 'flex',
-          },
-        }),
       }}>
       <Tabs.Screen
         name="index"
