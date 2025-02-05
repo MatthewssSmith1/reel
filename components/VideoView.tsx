@@ -2,11 +2,11 @@ import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { getScreenHeight, getScreenWidth } from '@/lib/utils';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { useEffect, useState } from 'react';
+import { useOptimisticLikes } from '@/hooks/useOptimisticLikes';
 import { Video, ResizeMode } from 'expo-av';
 import { useCommentStore } from '@/lib/commentStore';
 import { ToolbarButton } from './ToolbarButton';
 import { Post, storage } from '@/lib/firebase';
-import { useLikeStore } from '@/lib/likeStore';
 import { ThemedText } from './ThemedText';
 
 const VIDEO_ASSETS: { [key: string]: number } = {
@@ -33,15 +33,13 @@ type VideoViewProps = {
   videoRef: (ref: Video | null) => void;
 };
 
+// commented lines are for loading videos from the storage bucket (excluded to save on bandwidth by using static assets for now)
 export function VideoView({ post, shouldPlay, videoRef }: VideoViewProps) {
   const { toggleMessages } = useCommentStore();
-  const { toggleLike, isLiked } = useLikeStore();
-  const [otherUsersLikeCount, setOtherUsersLikeCount] = useState(0);
+  const { liked, optimisticCount, toggleLike } = useOptimisticLikes(post.id, post.likes_count, 'post');
   // const [videoUri, setVideoUri] = useState<string | null>(null);
   // const [isLoading, setIsLoading] = useState(true);
   // const [error, setError] = useState<string | null>(null);
-
-  const liked = isLiked(post.id);
 
   // useEffect(() => {
   //   const loadVideo = async () => {
@@ -60,10 +58,6 @@ export function VideoView({ post, shouldPlay, videoRef }: VideoViewProps) {
   //   };
   //   loadVideo();
   // }, [post.video_id]);
-
-  useEffect(() => {
-    setOtherUsersLikeCount(post.likes_count - (liked ? 1 : 0));
-  }, [post.id]);
 
   return (
     <View style={styles.videoContainer}>
@@ -92,9 +86,9 @@ export function VideoView({ post, shouldPlay, videoRef }: VideoViewProps) {
         <ToolbarButton name="person-circle" />
         <ToolbarButton 
           name={liked ? "heart" : "heart-outline"}
-          count={otherUsersLikeCount + (liked ? 1 : 0)} 
+          count={optimisticCount} 
           color={liked ? '#FF2D55' : '#fff'}
-          onPress={() => toggleLike(post.id)}
+          onPress={toggleLike}
         />
         <ToolbarButton 
           name="chatbubble" 

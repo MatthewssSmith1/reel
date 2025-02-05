@@ -1,9 +1,10 @@
 import { doc, setDoc, Timestamp, collection, getDocs, deleteDoc, getFirestore } from 'firebase/firestore';
-import { User, Post, Like, Comment } from '@/lib/firebase';
+import { User, Post, Comment } from '@/lib/firebase';
 import { firebaseConfig } from '../config';
 import { initializeApp } from 'firebase/app';
 
 const MAX_LIKES_PER_POST = 6;
+const MAX_LIKES_PER_COMMENT = 3;
 const MAX_COMMENTS_PER_POST = 6;
 
 const db = getFirestore(initializeApp(firebaseConfig));
@@ -31,9 +32,9 @@ async function clearCollection(collectionName: string) {
   console.log(`Cleared collection: ${collectionName}`);
 }
 
-function createUser(username: string, bio: string, id?: string): User {
+function createUser(username: string, bio: string, uid?: string): User {
   return {
-    uid: id || generateId(),
+    uid: uid || generateId(),
     username,
     avatar_url: `https://api.dicebear.com/7.x/avataaars/png?seed=${username}`,
     bio,
@@ -63,6 +64,8 @@ let posts: Post[] = Array.from({ length: 15 }, (_, i) => ({
   comments_count: 0
 }));
 
+let comments: Comment[] = [];
+
 const COMMENTS = [
   "This looks absolutely delicious! 🤤",
   "The plating is gorgeous 👨‍🍳",
@@ -89,8 +92,22 @@ const COMMENTS = [
 const getOtherUsers = (authorId: string) => 
   users.filter(user => user.uid !== authorId);
 
-function generateLikes(): Like[] {
-  const likes: Like[] = [];
+type PostLike = {
+  id: string;
+  user_id: string;
+  post_id: string;
+  created_at: Timestamp;
+};
+
+type CommentLike = {
+  id: string;
+  user_id: string;
+  comment_id: string;
+  created_at: Timestamp;
+};
+
+function generatePostLikes(): PostLike[] {
+  const likes: PostLike[] = [];
   
   for (const post of posts) {
     const otherUsers = getOtherUsers(post.author_id);
@@ -112,8 +129,31 @@ function generateLikes(): Like[] {
   return likes;
 }
 
+function generateCommentLikes(): CommentLike[] {
+  const likes: CommentLike[] = [];
+  
+  for (const comment of comments) {
+    const otherUsers = getOtherUsers(comment.user_id);
+    const likerCount = getRandomInt(0, MAX_LIKES_PER_COMMENT);
+    const likers = getRandomItems(otherUsers, likerCount);
+    
+    for (const liker of likers) {
+      const likeId = `${liker.uid}_${comment.id}`;
+      likes.push({
+        id: likeId,
+        user_id: liker.uid,
+        comment_id: comment.id,
+        created_at: getRandomTimestamp(0, 7)
+      });
+      comment.likes_count++;
+    }
+  }
+  
+  return likes;
+}
+
 function generateComments(): Comment[] {
-  const comments: Comment[] = [];
+  comments = [];
   
   for (const post of posts) {
     const otherUsers = getOtherUsers(post.author_id);
@@ -145,8 +185,9 @@ function updateUserCounts() {
 
 async function seedDatabase() {
   try {
-    const likes = generateLikes();
-    const comments = generateComments();
+    generateComments();
+    const postLikes = generatePostLikes();
+    const commentLikes = generateCommentLikes();
     updateUserCounts();
 
     await clearCollection('users');
@@ -155,11 +196,14 @@ async function seedDatabase() {
     await clearCollection('posts');
     for (const post of posts) await setDoc(doc(db, 'posts', post.id), post);
 
-    await clearCollection('likes');
-    for (const like of likes) await setDoc(doc(db, 'likes', like.id), like);
-
     await clearCollection('comments');
     for (const comment of comments) await setDoc(doc(db, 'comments', comment.id), comment);
+
+    await clearCollection('post_likes');
+    for (const like of postLikes) await setDoc(doc(db, 'post_likes', like.id), like);
+
+    await clearCollection('comment_likes');
+    for (const like of commentLikes) await setDoc(doc(db, 'comment_likes', like.id), like);
 
     console.log('Seeding completed successfully');
     process.exit(0);

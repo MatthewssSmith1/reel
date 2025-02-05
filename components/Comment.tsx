@@ -1,12 +1,14 @@
-import { StyleSheet, View, Image } from 'react-native';
-import { Comment as CommentType } from '@/lib/firebase';
-import { useUserStore } from '@/lib/userStore'
+import { StyleSheet, View, Image, TouchableOpacity } from 'react-native';
 import { formatCount, formatTimestamp } from '@/lib/utils';
+import { Comment as CommentType } from '@/lib/firebase';
+import { useOptimisticLikes } from '@/hooks/useOptimisticLikes';
+import { useUserStore } from '@/lib/userStore'
 import { ThemedText } from './ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 
 export function Comment({ comment }: { comment: CommentType }) {
   const user = useUserStore(state => state.users[comment.user_id])
+  const { liked, optimisticCount, toggleLike } = useOptimisticLikes(comment.id, comment.likes_count, 'comment');
 
   if (!user) return null
 
@@ -23,10 +25,16 @@ export function Comment({ comment }: { comment: CommentType }) {
         </View>
         <ThemedText style={styles.text}>{comment.text}</ThemedText>
       </View>
-      <View style={styles.likeContainer}>
-        <Ionicons name="heart-outline" size={12} color="#999" />
-        <ThemedText style={styles.likes}>{formatCount(comment.likes_count)}</ThemedText>
-      </View>
+      <TouchableOpacity style={styles.likeContainer} onPress={toggleLike}>
+        <Ionicons 
+          name={liked ? "heart" : "heart-outline"} 
+          size={12} 
+          color={liked ? '#FF2D55' : '#999'} 
+        />
+        <ThemedText style={[styles.likes, liked && styles.likedText]}>
+          {formatCount(optimisticCount)}
+        </ThemedText>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -56,7 +64,7 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#fff',
   },
   timestamp: {
@@ -66,7 +74,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 14,
-    color: '#fff',
+    color: '#ccc',
     lineHeight: 18,
   },
   likeContainer: {
@@ -79,5 +87,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     marginLeft: 4,
+  },
+  likedText: {
+    color: '#FF2D55',
   },
 }); 

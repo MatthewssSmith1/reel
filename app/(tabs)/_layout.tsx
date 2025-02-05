@@ -1,9 +1,9 @@
+import { usePostLikeStore, useCommentLikeStore } from '@/lib/likeStore';
 import React, { useEffect } from 'react';
 import { useCommentStore } from '@/lib/commentStore';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useUserStore } from '@/lib/userStore';
-import { useLikeStore } from '@/lib/likeStore';
 import { usePostStore } from '@/lib/postStore';
 import { HapticTab } from '@/components/HapticTab';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,12 +15,14 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { isMessagesOpen } = useCommentStore();
   const { loadUsers } = useUserStore();
-  const { loadLikes } = useLikeStore();
+  const { loadLikes: loadPostLikes } = usePostLikeStore();
+  const { loadLikes: loadCommentLikes } = useCommentLikeStore();
   const { loadPosts } = usePostStore();
 
   useEffect(() => {
     loadUsers();
-    loadLikes();
+    loadPostLikes();
+    loadCommentLikes();
     loadPosts();
   }, []); 
 
