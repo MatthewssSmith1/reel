@@ -6,7 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
-import { Slot } from 'expo-router';
+import { Stack } from 'expo-router';
 import 'react-native-reanimated';
 
 SplashScreen.preventAutoHideAsync();
@@ -21,7 +21,11 @@ function AuthGuard() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Slot />
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(modals)" options={{ headerShown: false, presentation: 'modal' }} />
+      </Stack>
     </ThemeProvider>
   );
 }

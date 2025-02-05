@@ -1,4 +1,4 @@
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Pressable } from 'react-native';
 import { getScreenHeight, getScreenWidth } from '@/lib/utils';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { useEffect, useState } from 'react';
@@ -8,6 +8,7 @@ import { useCommentStore } from '@/lib/commentStore';
 import { ToolbarButton } from './ToolbarButton';
 import { Post, storage } from '@/lib/firebase';
 import { ThemedText } from './ThemedText';
+import { router } from 'expo-router';
 
 const VIDEO_ASSETS: { [key: string]: number } = {
   '0': require('../assets/videos/0.mp4'),
@@ -59,6 +60,13 @@ export function VideoView({ post, shouldPlay, videoRef }: VideoViewProps) {
   //   loadVideo();
   // }, [post.video_id]);
 
+  const handleProfilePress = () => {
+    router.push({
+      pathname: '/(modals)/user-profile',
+      params: { userId: post.author_id }
+    });
+  };
+
   return (
     <View style={styles.videoContainer}>
       {/* {isLoading && (
@@ -83,7 +91,7 @@ export function VideoView({ post, shouldPlay, videoRef }: VideoViewProps) {
         />
       {/* )} */}
       <View style={styles.toolbarContainer}>
-        <ToolbarButton name="person-circle" />
+        <ToolbarButton name="person-circle" onPress={handleProfilePress} />
         <ToolbarButton 
           name={liked ? "heart" : "heart-outline"}
           count={optimisticCount} 

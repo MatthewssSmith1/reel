@@ -97,10 +97,10 @@ const COMMENTS = [
   "Gordon Ramsay would approve 🔥"
 ];
 
-function generateComments(): Comment[] {
+function generateComments(posts: Post[]): Comment[] {
   const comments: Comment[] = [];
   
-  for (const post of generatePosts()) {
+  for (const post of posts) {
     const otherUsers = users.filter(u => u.uid !== post.author_id);
     const commenterCount = utils.randomInt(1, MAX_COMMENTS_PER_POST);
     const commenters = utils.randomItems(otherUsers, commenterCount);
@@ -149,7 +149,7 @@ function generateFollows(users: User[]): Follow[] {
 async function seedDatabase() {
   try {
     const posts = generatePosts();
-    const comments = generateComments();
+    const comments = generateComments(posts);
     
     const postLikes = generateLikes(
       posts, 

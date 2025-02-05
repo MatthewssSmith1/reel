@@ -8,6 +8,7 @@ import { usePostStore } from '@/lib/postStore';
 import { HapticTab } from '@/components/HapticTab';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
+import { useAuth } from '@/contexts/AuthContext';
 import { Colors } from '@/constants/Colors';
 import { Tabs } from 'expo-router';
 
@@ -18,13 +19,16 @@ export default function TabLayout() {
   const { loadLikes: loadPostLikes } = usePostLikeStore();
   const { loadLikes: loadCommentLikes } = useCommentLikeStore();
   const { loadPosts } = usePostStore();
+  const { user } = useAuth();
 
   useEffect(() => {
-    loadUsers();
+    if (!user) return;
+
+    loadUsers(user.uid);
     loadPostLikes();
     loadCommentLikes();
     loadPosts();
-  }, []); 
+  }, [user?.uid]); 
 
   return (
     <Tabs
