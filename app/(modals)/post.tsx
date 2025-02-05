@@ -57,6 +57,7 @@ export default function PostModal() {
             <VideoView
               key={post.id}
               post={post}
+              hideProfileButton
               shouldPlay={index === initialIndex}
               videoRef={ref => (videoRefs.current[post.id] = ref)}
             />

@@ -3,6 +3,7 @@ import { ref, getDownloadURL } from 'firebase/storage';
 import { useEffect, useState } from 'react';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { ThemedView as View } from '@/components/ThemedView';
+import { useFollowStore } from '@/lib/followStore';
 import { Post, storage } from '@/lib/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserStore } from '@/lib/userStore';
@@ -23,12 +24,15 @@ const StatDisplay = ({ value, label }: { value: number; label: string }) => (
 );
 
 export function Profile({ userId, headerLeft, headerRight }: ProfileProps) {
-  const { users } = useUserStore();
+  const { users, authUser } = useUserStore();
   const { posts } = usePostStore();
+  const { isFollowing, toggleFollow } = useFollowStore();
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const userPosts = posts.filter(post => post.author_id === userId);
+
+  const isAuthUser = authUser?.uid === userId;
 
   useEffect(() => {
     const loadThumbnails = async () => {
@@ -65,7 +69,7 @@ export function Profile({ userId, headerLeft, headerRight }: ProfileProps) {
   };
 
   const user = users[userId];
-  if (!user) return null;
+  if (!user || !authUser) return null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -91,6 +95,16 @@ export function Profile({ userId, headerLeft, headerRight }: ProfileProps) {
           <StatDisplay value={user.followers_count} label="Followers" />
           <StatDisplay value={user.posts_count} label="Posts" />
         </View>
+
+        {/* Action Button */}
+        <Pressable 
+          style={styles.actionButton}
+          onPress={() => isAuthUser ? console.log('Edit profile') : toggleFollow(authUser?.uid, userId)}
+        >
+          <Text style={styles.actionButtonText}>
+            {isAuthUser ? 'Edit Profile' : (isFollowing(userId) ? 'Unfollow' : 'Follow')}
+          </Text>
+        </Pressable>
 
         {/* Bio */}
         <Text style={styles.bio}>{user.bio}</Text>
@@ -205,5 +219,17 @@ const styles = StyleSheet.create({
   thumbnail: {
     flex: 1,
     borderRadius: 4,
+  },
+  actionButton: {
+    backgroundColor: '#333',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 24,
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  actionButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

@@ -7,9 +7,10 @@ type UserStore = {
   isLoading: boolean
   authUser: User | null
   loadUsers: (authUserId?: string) => Promise<void>
+  updateFollowCounts: (followerId: string, followingId: string, increment: boolean) => void
 }
 
-export const useUserStore = create<UserStore>((set) => ({
+export const useUserStore = create<UserStore>((set, get) => ({
   users: {},
   isLoading: false,
   authUser: null,
@@ -30,5 +31,22 @@ export const useUserStore = create<UserStore>((set) => ({
       console.log(error)
       set({ isLoading: false })
     }
+  },
+  updateFollowCounts: (followerId: string, followingId: string, increment: boolean) => {
+    const { users, authUser } = get()
+    const delta = increment ? 1 : -1
+
+    set({
+      users: {
+        ...users,
+        [followerId]: { ...users[followerId], following_count: (users[followerId]?.following_count || 0) + delta },
+        [followingId]: { ...users[followingId], followers_count: (users[followingId]?.followers_count || 0) + delta }
+      },
+      authUser: authUser?.uid === followerId 
+        ? { ...authUser, following_count: (authUser.following_count || 0) + delta }
+        : authUser?.uid === followingId
+        ? { ...authUser, followers_count: (authUser.followers_count || 0) + delta }
+        : authUser
+    })
   }
 })) 

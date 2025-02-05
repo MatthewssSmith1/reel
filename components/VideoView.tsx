@@ -30,11 +30,12 @@ const VIDEO_ASSETS: { [key: string]: number } = {
 type VideoViewProps = {
   post: Post;
   shouldPlay: boolean;
+  hideProfileButton?: boolean;
   videoRef: (ref: Video | null) => void;
 };
 
 // commented lines are for loading videos from the storage bucket (excluded to save on bandwidth by using static assets for now)
-export function VideoView({ post, shouldPlay, videoRef }: VideoViewProps) {
+export function VideoView({ post, shouldPlay, videoRef, hideProfileButton = false }: VideoViewProps) {
   const { liked, optimisticCount, toggleLike } = useOptimisticLikes(post.id, post.likes_count, 'post');
   // const [videoUri, setVideoUri] = useState<string | null>(null);
   // const [isLoading, setIsLoading] = useState(true);
@@ -96,7 +97,9 @@ export function VideoView({ post, shouldPlay, videoRef }: VideoViewProps) {
         />
       {/* )} */}
       <View style={styles.toolbarContainer}>
-        <ToolbarButton name="person-circle" onPress={handleProfilePress} />
+        {!hideProfileButton && (
+          <ToolbarButton name="person-circle" onPress={handleProfilePress} />
+        )}
         <ToolbarButton 
           name={liked ? "heart" : "heart-outline"}
           count={optimisticCount} 
