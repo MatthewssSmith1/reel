@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getScreenHeight } from '@/lib/utils';
 import { useCommentStore } from '@/lib/commentStore';
 import { usePostStore } from '@/lib/postStore';
-import { IconSymbol } from './ui/IconSymbol';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from './ThemedText';
 import { BlurView } from 'expo-blur';
 import { Comment } from './Comment';
@@ -65,7 +65,7 @@ export function CommentsSheet() {
               toggleMessages(false);
             }}
           >
-            <IconSymbol name="xmark" color="white" size={24} />
+            <Ionicons name="close" color="white" size={24} />
           </TouchableOpacity>
         </View>
         
@@ -96,7 +96,7 @@ export function CommentsSheet() {
               setComment('');
             }}
           >
-            <IconSymbol name="paperplane.fill" color="white" size={20} />
+            <Ionicons name="paper-plane" color="white" size={20} />
           </TouchableOpacity>
         </View>
       </View>

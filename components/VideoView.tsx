@@ -51,19 +51,18 @@ export function VideoView({ post, videoRef }: VideoViewProps) {
         shouldPlay={false}
       />
       <View style={styles.toolbarContainer}>
-        <ToolbarButton name="person.circle.fill" />
+        <ToolbarButton name="person-circle" />
         <ToolbarButton 
-          name="heart.fill" 
+          name={liked ? "heart" : "heart-outline"}
           count={otherUsersLikeCount + (liked ? 1 : 0)} 
           color={liked ? '#FF2D55' : '#fff'}
           onPress={() => toggleLike(post.id)}
         />
         <ToolbarButton 
-          name="message.fill" 
+          name="chatbubble" 
           count={post.comments_count} 
           onPress={() => toggleMessages(true)}
         />
-        <ToolbarButton name="square.and.arrow.up" />
       </View>
     </View>
   );
@@ -83,6 +82,6 @@ const styles = StyleSheet.create({
     right: 16,
     bottom: 110,
     alignItems: 'center',
-    gap: 20,
+    // gap: 20,
   },
 }); 

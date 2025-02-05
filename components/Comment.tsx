@@ -3,7 +3,7 @@ import { Comment as CommentType } from '@/lib/firebase';
 import { useUserStore } from '@/lib/userStore'
 import { formatCount } from '@/lib/utils';
 import { ThemedText } from './ThemedText';
-import { IconSymbol } from './ui/IconSymbol';
+import { Ionicons } from '@expo/vector-icons';
 
 export function Comment({ comment }: { comment: CommentType }) {
   const user = useUserStore(state => state.users[comment.user_id])
@@ -24,7 +24,7 @@ export function Comment({ comment }: { comment: CommentType }) {
         <ThemedText style={styles.text}>{comment.text}</ThemedText>
       </View>
       <View style={styles.likeContainer}>
-        <IconSymbol name="heart" size={12} color="#999" />
+        <Ionicons name="heart-outline" size={12} color="#999" />
         <ThemedText style={styles.likes}>{formatCount(comment.likes_count)}</ThemedText>
       </View>
     </View>

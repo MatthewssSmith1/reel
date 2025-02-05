@@ -1,10 +1,9 @@
-import { StyleSheet, View, Pressable, Text } from 'react-native';
-import { IconSymbol, IconSymbolName } from '@/components/ui/IconSymbol';
+import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { formatCount } from '@/lib/utils';
-import { TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export type ToolbarButtonProps = {
-  name: IconSymbolName;
+  name: keyof typeof Ionicons.glyphMap;
   count?: number;
   color?: string;
   onPress?: () => void;
@@ -13,13 +12,9 @@ export type ToolbarButtonProps = {
 export function ToolbarButton({ name, count, color = '#fff', onPress }: ToolbarButtonProps) {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
-      <IconSymbol 
-        name={name} 
-        size={28} 
-        color={color} 
-      />
+      <Ionicons  name={name} size={36} color={color} />
       {count !== undefined && (
-        <Text style={styles.count}>{count}</Text>
+        <Text style={styles.count}>{formatCount(count)}</Text>
       )}
     </TouchableOpacity>
   );
@@ -28,10 +23,12 @@ export function ToolbarButton({ name, count, color = '#fff', onPress }: ToolbarB
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+    padding: 10,
   },
   count: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 16,
     marginTop: 4,
+    fontWeight: 'bold',
   },
 }); 
