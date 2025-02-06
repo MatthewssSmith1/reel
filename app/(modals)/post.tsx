@@ -25,9 +25,7 @@ export default function PostModal() {
     : posts.filter(p => p.author_id === userId);
   
   const sortedPosts = displayedPosts.sort((a, b) => b.created_at.seconds - a.created_at.seconds);
-  const initialIndex = sortedPosts.findIndex(p => p.id === postId);
-  if (initialIndex === -1) return null;
-
+  
   const onScroll = useCallback(({ nativeEvent }: any) => {
     const index = Math.round(nativeEvent.contentOffset.y / getScreenHeight());
     const post = sortedPosts[index];
@@ -39,6 +37,9 @@ export default function PostModal() {
       else video.pauseAsync();
     });
   }, [sortedPosts]);
+
+  const initialIndex = sortedPosts.findIndex(p => p.id === postId);
+  if (initialIndex === -1) return null;
 
   return (
     <View style={styles.container}>
