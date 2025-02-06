@@ -1,9 +1,9 @@
 import { StyleSheet, View, ActivityIndicator, Pressable, Image } from 'react-native';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { getScreenHeight, getScreenWidth } from '@/lib/utils';
+import { useEffect, useRef, useState } from 'react';
 import { ref, getDownloadURL } from 'firebase/storage';
-import { useEffect, useState } from 'react';
 import { useOptimisticLikes } from '@/hooks/useOptimisticLikes';
-import { Video, ResizeMode } from 'expo-av';
 import { ToolbarButton } from './ToolbarButton';
 import { Post, storage } from '@/lib/firebase';
 import { useThumbnail } from '@/hooks/useThumbnails';
@@ -32,16 +32,17 @@ type VideoViewProps = {
   post: Post;
   shouldPlay: boolean;
   hideProfileButton?: boolean;
-  videoRef: (ref: Video | null) => void;
+  setVideoRef: (ref: Video | null) => void;
 };
 
 // commented lines are for loading videos from the storage bucket (excluded to save on bandwidth by using static assets for now)
-export function VideoView({ post, shouldPlay, videoRef, hideProfileButton = false }: VideoViewProps) {
+export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = false }: VideoViewProps) {
   const { liked, optimisticCount, toggleLike } = useOptimisticLikes(post.id, post.likes_count, 'post');
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<Video | null>(null);
   const thumbnailUri = useThumbnail(post); 
   // const [videoUri, setVideoUri] = useState<string | null>(null);
-  // const [isLoading, setIsLoading] = useState(true);
   // const [error, setError] = useState<string | null>(null);
 
   // useEffect(() => {
@@ -62,18 +63,18 @@ export function VideoView({ post, shouldPlay, videoRef, hideProfileButton = fals
   //   loadVideo();
   // }, [post.video_id]);
 
-  const handleProfilePress = () => {
-    router.push({
-      pathname: '/(modals)/user-profile',
-      params: { userId: post.author_id }
-    });
+  const onStatusChange = (status: AVPlaybackStatus) => {
+    const isPlaying = status.isLoaded && status.isPlaying;
+    setIsPlaying(isPlaying);
+
+    if (isLoading) setIsLoading(!isPlaying);
   };
 
-  const handleCommentsPress = () => {
-    router.push({
-      pathname: '/(modals)/comments',
-      params: { postId: post.id }
-    });
+  const onVideoPress = () => {
+    const video = videoRef.current;
+    if (!video || isLoading) return;
+
+    isPlaying ? video.pauseAsync() : video.playAsync();
   };
 
   return (
@@ -89,18 +90,23 @@ export function VideoView({ post, shouldPlay, videoRef, hideProfileButton = fals
         </View>
       )}
       {videoUri && ( */}
-        <Video
-          ref={videoRef}
-          // source={{ uri: videoUri }}
-          source={VIDEO_ASSETS[post.video_id]}
-          style={styles.video}
-          resizeMode={ResizeMode.COVER}
-          isLooping
-          shouldPlay={shouldPlay}
-          onPlaybackStatusUpdate={status => setIsVideoPlaying(status.isLoaded && status.isPlaying)}
-        />
+        <Pressable onPress={onVideoPress} style={styles.video}>
+          <Video
+            isLooping
+            ref={ref => {
+              videoRef.current = ref;
+              setVideoRef(ref);
+            }}
+            // source={{ uri: videoUri }}
+            source={VIDEO_ASSETS[post.video_id]}
+            style={StyleSheet.absoluteFill}
+            resizeMode={ResizeMode.COVER}
+            shouldPlay={shouldPlay}
+            onPlaybackStatusUpdate={onStatusChange}
+          />
+        </Pressable>
       {/* )} */}
-      {!isVideoPlaying && (
+      {isLoading && (
         <View style={styles.loadingContainer}>
           {thumbnailUri && (
             <Image 
@@ -119,7 +125,10 @@ export function VideoView({ post, shouldPlay, videoRef, hideProfileButton = fals
       </View>
       <View style={styles.toolbarContainer}>
         {!hideProfileButton && (
-          <ToolbarButton name="person-circle" onPress={handleProfilePress} />
+          <ToolbarButton 
+            name="person-circle" 
+            onPress={() => router.push({ pathname: '/(modals)/user-profile', params: { userId: post.author_id } })} 
+          />
         )}
         <ToolbarButton 
           name={liked ? "heart" : "heart-outline"}
@@ -130,7 +139,7 @@ export function VideoView({ post, shouldPlay, videoRef, hideProfileButton = fals
         <ToolbarButton 
           name="chatbubble" 
           count={post.comments_count} 
-          onPress={handleCommentsPress}
+          onPress={() => router.push({ pathname: '/(modals)/comments', params: { postId: post.id } })}
         />
       </View>
     </View>

@@ -42,7 +42,7 @@ export function VideoScrollView({
       post={post}
       hideProfileButton={hideProfileButton}
       shouldPlay={shouldPlay && index === initialIndex}
-      videoRef={ref => (videoRefs.current[post.id] = ref)}
+      setVideoRef={ref => (videoRefs.current[post.id] = ref)}
     />
   ), [hideProfileButton, shouldPlay, initialIndex]);
 
