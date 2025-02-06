@@ -1,5 +1,6 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import * as SplashScreen from 'expo-splash-screen';
@@ -42,10 +43,12 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthGuard />
-      </QueryClientProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthGuard />
+        </QueryClientProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

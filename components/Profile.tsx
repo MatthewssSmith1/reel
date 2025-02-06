@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 25,
     fontWeight: 'bold',
   },
   statLabel: {

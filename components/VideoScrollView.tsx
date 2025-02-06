@@ -1,5 +1,4 @@
-import { StyleSheet, FlatList, ListRenderItem } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { FlatList, ListRenderItem, View } from 'react-native';
 import { useCallback, useRef } from 'react';
 import { getScreenHeight } from '@/lib/utils';
 import { VideoView } from '@/components/VideoView';
@@ -53,7 +52,7 @@ export function VideoScrollView({
   }), []);
 
   return (
-    <GestureHandlerRootView style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
       <FlatList
         ref={flatListRef}
         data={posts}
@@ -71,13 +70,6 @@ export function VideoScrollView({
         maxToRenderPerBatch={3}
         removeClippedSubviews={true}
       />
-    </GestureHandlerRootView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-});
