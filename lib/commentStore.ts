@@ -4,14 +4,14 @@ import { usePostStore } from '@/lib/postStore'
 import { create } from 'zustand'
 
 type CommentStore = {
-  comments: Comment[] | null
+  comments: Comment[]
   isLoading: boolean
   loadComments: (postId: string) => Promise<void>
   submitComment: (postId: string, text: string) => Promise<void>
 }
 
 export const useCommentStore = create<CommentStore>((set) => ({
-  comments: null,
+  comments: [],
   isLoading: false,
   loadComments: async (postId: string) => {
     set({ isLoading: true })
@@ -23,6 +23,7 @@ export const useCommentStore = create<CommentStore>((set) => ({
         orderBy('created_at', 'desc')
       )
       const snapshot = await getDocs(q)
+      // TODO: process comments by nesting replies inside their parents' `children` arrays
       const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment)).reverse()
       
       set({ comments, isLoading: false })
@@ -31,6 +32,8 @@ export const useCommentStore = create<CommentStore>((set) => ({
       set({ isLoading: false })
     }
   },
+  // TODO: handle submitting comment replies (db insertion is similar, 
+  // but append them to their parent's `children` array rather than insert a top level comment)
   submitComment: async (postId: string, text: string) => {
     if (!text.trim()) return;
     
@@ -43,7 +46,9 @@ export const useCommentStore = create<CommentStore>((set) => ({
         user_id: auth.currentUser!.uid,
         text: text.trim(),
         created_at: Timestamp.now(),
-        likes_count: 0
+        replies_count: 0,
+        likes_count: 0,
+        parent_id: null
       };
       
       const docRef = await addDoc(commentsRef, newComment);
@@ -54,9 +59,7 @@ export const useCommentStore = create<CommentStore>((set) => ({
       const comment = { id: docRef.id, ...newComment } as Comment;
       usePostStore.getState().offsetCommentCount(postId);
       
-      set(state => ({
-        comments: state.comments ? [...state.comments, comment] : [comment]
-      }));
+      set(state => ({ comments: [...state.comments, comment] }));
     } catch (error) {
       console.error('Error submitting comment:', error);
     }

@@ -21,14 +21,22 @@ export function Comment({ comment }: { comment: CommentType }) {
       <View style={styles.content}>
         <View style={styles.header}>
           <ThemedText style={styles.username}>{user.username}</ThemedText>
-          <ThemedText style={styles.timestamp}>{formatTimestamp(comment.created_at)}</ThemedText>
         </View>
         <ThemedText style={styles.text}>{comment.text}</ThemedText>
+        <View style={styles.footer}>
+          <ThemedText style={styles.timestamp}>{formatTimestamp(comment.created_at)}</ThemedText>
+          <TouchableOpacity 
+            style={styles.replyButton}
+            onPress={() => console.log('Reply to comment:', comment.id)}
+          >
+            <ThemedText style={styles.replyText}>Reply</ThemedText>
+          </TouchableOpacity>
+        </View>
       </View>
       <TouchableOpacity style={styles.likeContainer} onPress={toggleLike}>
         <Ionicons 
           name={liked ? "heart" : "heart-outline"} 
-          size={12} 
+          size={16} 
           color={liked ? '#FF2D55' : '#999'} 
         />
         <ThemedText style={[styles.likes, liked && styles.likedText]}>
@@ -42,7 +50,7 @@ export function Comment({ comment }: { comment: CommentType }) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 16,
     alignItems: 'center',
   },
@@ -51,16 +59,21 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     marginRight: 12,
-    marginTop: 6,
+    marginBottom: 8,
   },
   content: {
     flex: 1,
-    marginRight: 12,
+    flexDirection: 'column',
+    gap: 2,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   username: {
     fontSize: 13,
@@ -70,7 +83,6 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 12,
     color: '#666',
-    marginLeft: 8,
   },
   text: {
     fontSize: 14,
@@ -78,17 +90,25 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   likeContainer: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     paddingTop: 2,
-    paddingRight: 10,
+    paddingRight: 8,
   },
   likes: {
     fontSize: 12,
     color: '#999',
-    marginLeft: 4,
   },
   likedText: {
     color: '#FF2D55',
+  },
+  replyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  replyText: {
+    fontSize: 12,
+    color: '#666',
   },
 }); 

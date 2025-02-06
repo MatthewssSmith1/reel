@@ -105,7 +105,9 @@ function generateComments(posts: Post[]): Comment[] {
         user_id: commenter.uid,
         text: utils.randomItems(COMMENTS, 1)[0],
         created_at: utils.randomTimestamp(0, 7),
-        likes_count: 0
+        likes_count: 0,
+        replies_count: 0,
+        parent_id: null,
       };
       
       comments.push(comment);

@@ -51,9 +51,7 @@ export default function CommentsModal() {
           <FlatList
             data={comments}
             keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <Comment comment={item} />
-            )}
+            renderItem={({ item }) => <Comment comment={item} /> }
             style={styles.commentsList}
             contentContainerStyle={{ paddingTop: 0, paddingBottom: bottom + 60 }}
             keyboardShouldPersistTaps="handled"

@@ -49,6 +49,9 @@ export type Comment = {
   text: string
   created_at: Timestamp
   likes_count: number
+  parent_id: string | null
+  replies_count: number
+  children?: Comment[] // not in db, derived on load via `parent_id`
 }
 
 export type Follow = {
