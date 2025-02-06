@@ -1,29 +1,9 @@
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
-import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
-import { useCallback, useRef } from 'react';
-import { getScreenHeight } from '@/lib/utils';
+import { VideoScrollView } from '@/components/VideoScrollView';
 import { usePostStore } from '@/lib/postStore';
-import { VideoView } from '@/components/VideoView';
-import { Video } from 'expo-av';
 
 export default function FeedScreen() {
-  const { posts, isLoading, setCurrentPost } = usePostStore();
-  const videoRefs = useRef<{ [key: string]: Video | null }>({});
-  const scrollRef = useRef<ScrollView>(null);
-
-  const onScroll = useCallback(({ nativeEvent }: any) => {
-    const index = Math.round(nativeEvent.contentOffset.y / getScreenHeight());
-    const post = posts[index];
-    if (!post) return;
-
-    Object.entries(videoRefs.current).forEach(([id, video]) => {
-      if (!video) return;
-      if (id === post.id) video.playAsync();
-      else video.pauseAsync();
-    });
-    
-    setCurrentPost(post);
-  }, [posts, setCurrentPost]);
+  const { posts, isLoading } = usePostStore();
 
   if (isLoading) return (
     <View style={[styles.container, styles.loading]}>
@@ -32,27 +12,9 @@ export default function FeedScreen() {
   );
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <ScrollView
-        ref={scrollRef}
-        pagingEnabled
-        showsVerticalScrollIndicator={false}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-        decelerationRate="fast"
-        snapToInterval={getScreenHeight()}
-        snapToAlignment="start"
-      >
-        {posts.map((post, index) => (
-          <VideoView
-            key={post.id}
-            post={post}
-            shouldPlay={index === 0}
-            videoRef={ref => (videoRefs.current[post.id] = ref)}
-          />
-        ))}
-      </ScrollView>
-    </GestureHandlerRootView>
+    <View style={styles.container}>
+      <VideoScrollView posts={posts} shouldPlay={true} />
+    </View>
   );
 }
 
@@ -65,4 +27,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-}); 
+});

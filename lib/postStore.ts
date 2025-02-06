@@ -6,8 +6,6 @@ import { create } from 'zustand'
 type PostStore = {
   posts: Post[]
   isLoading: boolean
-  currentPost: Post | null
-  setCurrentPost: (post: Post) => void
   loadPosts: () => Promise<void>
   offsetCommentCount: (postId: string, diff?: number) => void
 }
@@ -15,8 +13,6 @@ type PostStore = {
 export const usePostStore = create<PostStore>((set, get) => ({
   posts: [],
   isLoading: false,
-  currentPost: null,
-  setCurrentPost: (post: Post) => set({ currentPost: post }),
   loadPosts: async () => {
     set({ isLoading: true })
     try {
@@ -25,7 +21,7 @@ export const usePostStore = create<PostStore>((set, get) => ({
       const snapshot = await getDocs(q)
       const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post))
       if (posts.length > 0) {
-        set({ posts, currentPost: posts[0], isLoading: false })
+        set({ posts, isLoading: false })
         await useCommentStore.getState().loadComments(posts[0].id)
       } else {
         set({ posts, isLoading: false })
@@ -39,9 +35,6 @@ export const usePostStore = create<PostStore>((set, get) => ({
       post.id === postId 
         ? { ...post, comments_count: post.comments_count + diff }
         : post
-    ),
-    currentPost: state.currentPost?.id === postId
-      ? { ...state.currentPost, comments_count: state.currentPost.comments_count + diff }
-      : state.currentPost
+    )
   })),
 }))
