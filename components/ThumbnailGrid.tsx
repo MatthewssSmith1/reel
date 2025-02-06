@@ -1,9 +1,8 @@
 import { StyleSheet, Pressable, Image, FlatList, Dimensions, View } from 'react-native';
-import { ref, getDownloadURL } from 'firebase/storage';
-import { useState, useEffect } from 'react';
-import { Post, storage } from '@/lib/firebase';
+import { useThumbnails } from '@/hooks/useThumbnails';
 import { ThemedView } from '@/components/ThemedView';
 import { router } from 'expo-router';
+import { Post } from '@/lib/firebase';
 
 type ThumbnailGridProps = {
   posts: Post[];
@@ -20,27 +19,7 @@ export function ThumbnailGrid({
   isScrollable = true,
   onPostPress 
 }: ThumbnailGridProps) {
-  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    const loadThumbnails = async () => {
-      const thumbnailUrls: Record<string, string> = {};
-      await Promise.all(
-        posts.map(async (post) => {
-          try {
-            const thumbnailRef = ref(storage, `thumbnails/${post.video_id}.jpg`);
-            const url = await getDownloadURL(thumbnailRef);
-            thumbnailUrls[post.id] = url;
-          } catch (error) {
-            console.error('Error loading thumbnail:', error);
-          }
-        })
-      );
-      setThumbnails(thumbnailUrls);
-    };
-
-    if (posts.length > 0) loadThumbnails();
-  }, [posts]);
+  const thumbnails = useThumbnails(posts);
 
   const handlePostPress = (post: Post) => {
     if (onPostPress) {

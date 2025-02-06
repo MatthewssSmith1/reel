@@ -1,4 +1,4 @@
-import { StyleSheet, View, ActivityIndicator, Pressable } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Pressable, Image } from 'react-native';
 import { getScreenHeight, getScreenWidth } from '@/lib/utils';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { useEffect, useState } from 'react';
@@ -6,6 +6,7 @@ import { useOptimisticLikes } from '@/hooks/useOptimisticLikes';
 import { Video, ResizeMode } from 'expo-av';
 import { ToolbarButton } from './ToolbarButton';
 import { Post, storage } from '@/lib/firebase';
+import { useThumbnail } from '@/hooks/useThumbnails';
 import { ThemedText } from './ThemedText';
 import { router } from 'expo-router';
 
@@ -37,6 +38,8 @@ type VideoViewProps = {
 // commented lines are for loading videos from the storage bucket (excluded to save on bandwidth by using static assets for now)
 export function VideoView({ post, shouldPlay, videoRef, hideProfileButton = false }: VideoViewProps) {
   const { liked, optimisticCount, toggleLike } = useOptimisticLikes(post.id, post.likes_count, 'post');
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const thumbnailUri = useThumbnail(post); 
   // const [videoUri, setVideoUri] = useState<string | null>(null);
   // const [isLoading, setIsLoading] = useState(true);
   // const [error, setError] = useState<string | null>(null);
@@ -94,8 +97,21 @@ export function VideoView({ post, shouldPlay, videoRef, hideProfileButton = fals
           resizeMode={ResizeMode.COVER}
           isLooping
           shouldPlay={shouldPlay}
+          onPlaybackStatusUpdate={status => setIsVideoPlaying(status.isLoaded && status.isPlaying)}
         />
       {/* )} */}
+      {!isVideoPlaying && (
+        <View style={styles.loadingContainer}>
+          {thumbnailUri && (
+            <Image 
+              source={{ uri: thumbnailUri }} 
+              style={StyleSheet.absoluteFillObject} 
+              resizeMode="cover"
+            />
+          )}
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
+      )}
       <View style={styles.descriptionContainer}>
         <ThemedText style={styles.descriptionText} numberOfLines={3}>
           {post.description}
@@ -140,16 +156,8 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  errorContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    color: '#fff',
-    textAlign: 'center',
+    zIndex: 2,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   descriptionContainer: {
     position: 'absolute',
