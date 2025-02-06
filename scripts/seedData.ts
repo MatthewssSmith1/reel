@@ -2,8 +2,10 @@ import { User, Post, Comment, Follow, PostLike, CommentLike } from '@/lib/fireba
 import * as utils from './seedUtils';
 
 const MAX_LIKES_PER_POST = 6;
-const MAX_LIKES_PER_COMMENT = 3;
-const MAX_COMMENTS_PER_POST = 6;
+const MAX_LIKES_PER_COMMENT = 5;
+const MAX_COMMENTS_PER_POST = 10;
+const COMMENT_HAS_REPLIES_PROBABILITY = 0.5;
+const MAX_REPLIES_PER_COMMENT = 8;
 const MAX_FOLLOWERS_PER_USER = 4;
 
 function createUser(username: string, bio: string, uid?: string): User {
@@ -80,6 +82,7 @@ const COMMENTS = [
   "What heat setting did you use? 🔪",
   "This is food art at its finest ⭐",
   "My stomach is growling rn 🍽️",
+  "Can't wait to try this out! 🍴",
   "Weekend meal prep inspiration 📝",
   "Need that recipe ASAP 🙏",
   "The texture looks perfect 👩‍🍳",
@@ -87,7 +90,9 @@ const COMMENTS = [
   "That seasoning blend though 🧂",
   "Master class in presentation 🎯",
   "Could smell this through the screen 🍴",
-  "Gordon Ramsay would approve 🔥"
+  "Gordon Ramsay would approve 🔥",
+  "Would you like some more? 🤔",
+  "This is my go-to recipe for the week 🍽️",
 ];
 
 function generateComments(posts: Post[]): Comment[] {
@@ -116,6 +121,34 @@ function generateComments(posts: Post[]): Comment[] {
   }
   
   return comments;
+}
+
+function generateReplies(posts: Post[], comments: Comment[]): Comment[] {
+  const replies: Comment[] = [];
+
+  for (const comment of comments) {
+    if (Math.random() > COMMENT_HAS_REPLIES_PROBABILITY) continue;
+    
+    const numReplies = Math.floor(Math.random() * MAX_REPLIES_PER_COMMENT) + 1;
+    comment.replies_count += numReplies;
+    posts.find(p => p.id === comment.post_id)!.comments_count += numReplies;
+
+    for (let i = 0; i < numReplies; i++) {
+      const reply: Comment = {
+        id: utils.generateId(),
+        post_id: comment.post_id,
+        user_id: utils.randomItems(users, 1)[0].uid,
+        text: utils.randomItems(COMMENTS, 1)[0],
+        created_at: utils.randomTimestamp(0, 7),
+        likes_count: 0,
+        parent_id: comment.id,
+        replies_count: 0,
+      };
+      replies.push(reply);
+    }
+  }
+
+  return replies;
 }
 
 function generateFollows(users: User[]): Follow[] {
@@ -170,7 +203,8 @@ function generateLikes<T extends { likes_count: number }>(
 async function seedDatabase() {
   try {
     const posts = generatePosts();
-    const comments = generateComments(posts);
+    let comments = generateComments(posts);
+    comments = [...comments, ...generateReplies(posts, comments)];
     
     const postLikes = generateLikes(
       posts, 

@@ -6,13 +6,17 @@ import { create } from 'zustand'
 type CommentStore = {
   comments: Comment[]
   isLoading: boolean
+  replyTarget: Comment | null
+  setReplyTarget: (comment: Comment | null) => void
   loadComments: (postId: string) => Promise<void>
   submitComment: (postId: string, text: string) => Promise<void>
 }
 
-export const useCommentStore = create<CommentStore>((set) => ({
+export const useCommentStore = create<CommentStore>((set, get) => ({
   comments: [],
   isLoading: false,
+  replyTarget: null,
+  setReplyTarget: (comment) => set({ replyTarget: comment }),
   loadComments: async (postId: string) => {
     set({ isLoading: true })
     try {
@@ -23,23 +27,32 @@ export const useCommentStore = create<CommentStore>((set) => ({
         orderBy('created_at', 'desc')
       )
       const snapshot = await getDocs(q)
-      // TODO: process comments by nesting replies inside their parents' `children` arrays
-      const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment)).reverse()
+      const flatComments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment)).reverse()
       
-      set({ comments, isLoading: false })
+      const commentMap = new Map<string, Comment>()
+      const topLevelComments: Comment[] = []
+
+      flatComments.forEach(comment => {
+        comment.children = []
+        commentMap.set(comment.id, comment)
+      })
+
+      flatComments.forEach(comment => {
+        if (comment.parent_id) commentMap.get(comment.parent_id)?.children!.push(comment)
+        else topLevelComments.push(comment)
+      })
+      
+      set({ comments: topLevelComments, isLoading: false })
     } catch (error) {
       console.log(error)
       set({ isLoading: false })
     }
   },
-  // TODO: handle submitting comment replies (db insertion is similar, 
-  // but append them to their parent's `children` array rather than insert a top level comment)
   submitComment: async (postId: string, text: string) => {
     if (!text.trim()) return;
     
     try {
-      const commentsRef = collection(db, 'comments');
-      const postRef = doc(db, 'posts', postId);
+      const { replyTarget } = get()
       
       const newComment: Omit<Comment, 'id'> = {
         post_id: postId,
@@ -48,20 +61,38 @@ export const useCommentStore = create<CommentStore>((set) => ({
         created_at: Timestamp.now(),
         replies_count: 0,
         likes_count: 0,
-        parent_id: null
+        parent_id: replyTarget?.id ?? null
       };
-      
-      const docRef = await addDoc(commentsRef, newComment);
+
+      const commentsRef = collection(db, 'comments');
+      const commentDoc = await addDoc(commentsRef, newComment);
+      const comment = { id: commentDoc.id, ...newComment };
+
+      if (replyTarget) {
+        const parentCommentRef = doc(db, 'comments', replyTarget.id);
+        await updateDoc(parentCommentRef, {
+          replies_count: increment(1)
+        });
+
+        set(state => ({
+          comments: state.comments.map(c => 
+            c.id === replyTarget.id
+              ? { ...c, children: [...(c.children || []), comment], replies_count: (c.replies_count || 0) + 1 }
+              : c
+          )
+        }));
+      } else {
+        set(state => ({ comments: [...state.comments, { ...comment, children: [] }] }));
+      }
+
+      const postRef = doc(db, 'posts', postId);
       await updateDoc(postRef, {
         comments_count: increment(1)
       });
-      
-      const comment = { id: docRef.id, ...newComment } as Comment;
+
       usePostStore.getState().offsetCommentCount(postId);
-      
-      set(state => ({ comments: [...state.comments, comment] }));
     } catch (error) {
-      console.error('Error submitting comment:', error);
+      console.log(error);
     }
   }
 }))

@@ -1,25 +1,44 @@
 import { StyleSheet, TouchableOpacity, TextInput, View, FlatList, Keyboard, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useKeyboardVisibility } from '@/hooks/useKeyboardVisibility';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCommentStore } from '@/lib/commentStore';
 import { usePostStore } from '@/lib/postStore';
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { Comment } from '@/components/Comment';
+import { CommentView } from '@/components/CommentView';
 
 export default function CommentsModal() {
-  const { comments, isLoading, submitComment, loadComments } = useCommentStore();
+  const { comments, isLoading, submitComment, loadComments, replyTarget, setReplyTarget } = useCommentStore();
   const { postId } = useLocalSearchParams<{ postId: string }>();
+  const isKeyboardVisible = useKeyboardVisibility();
   const { bottom } = useSafeAreaInsets();
   const { posts } = usePostStore();
 
   const [comment, setComment] = useState('');
+  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     loadComments(postId);
   }, [postId]);
+
+  useEffect(() => {
+    setComment('');
+    if (replyTarget) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+    }
+  }, [replyTarget]);
+
+  const onSubmit = async () => {
+    if (!comment.trim()) return;
+    await submitComment(postId, comment.trim());
+    setComment('');
+    setReplyTarget(null);
+  };
 
   const post = posts.find(p => p.id === postId);
   if (!post) return null;
@@ -36,6 +55,8 @@ export default function CommentsModal() {
         <TouchableOpacity 
           style={styles.closeButton} 
           onPress={() => {
+            setComment('');
+            setReplyTarget(null);
             Keyboard.dismiss();
             router.back();
           }}
@@ -51,32 +72,45 @@ export default function CommentsModal() {
           <FlatList
             data={comments}
             keyExtractor={item => item.id}
-            renderItem={({ item }) => <Comment comment={item} /> }
+            renderItem={({ item }) => (
+              <CommentView comment={item} />
+            )}
             style={styles.commentsList}
             contentContainerStyle={{ paddingTop: 0, paddingBottom: bottom + 60 }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
           />
         )}
-
         <View style={[styles.inputContainer, { paddingBottom: Math.max(bottom, 10) }]}>
+          {replyTarget && (
+            <TouchableOpacity style={styles.sendButton} onPress={() => setReplyTarget(null)}>
+              <Ionicons name="chevron-back" color="white" size={18} />
+            </TouchableOpacity>
+          )}
+          {!replyTarget && (
+            <TouchableOpacity 
+              style={[styles.sendButton, !isKeyboardVisible && { opacity: 0.5 }]} 
+              onPress={() => Keyboard.dismiss()}
+              disabled={!isKeyboardVisible}
+            >
+              <Ionicons name="chevron-down" color="white" size={18} />
+            </TouchableOpacity>
+          )}
           <TextInput
+            ref={inputRef}
             style={styles.input}
-            placeholder="Add a comment..."
+            placeholder={replyTarget ? "Write a reply..." : "Write a comment..."}
             placeholderTextColor="#666"
             value={comment}
             onChangeText={setComment}
+            onSubmitEditing={onSubmit}
             multiline
           />
           <TouchableOpacity 
-            style={styles.sendButton}
-            onPress={async () => {
-              await submitComment(postId, comment);
-              setComment('');
-              Keyboard.dismiss();
-            }}
+            style={styles.sendButton} 
+            onPress={onSubmit}
           >
-            <Ionicons name="paper-plane" color="white" size={20} />
+            <Ionicons name={replyTarget ? "arrow-redo" : "paper-plane"} color="white" size={18} />
           </TouchableOpacity>
         </View>
       </View>
@@ -125,6 +159,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 3,
     padding: 10,
     backgroundColor: 'rgba(40, 40, 40, 0.95)',
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -135,10 +170,9 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     backgroundColor: '#1f1f1f',
     borderRadius: 20,
-    marginRight: 10,
     maxHeight: 100,
   },
   sendButton: {
@@ -150,5 +184,9 @@ const styles = StyleSheet.create({
   },
   commentsList: {
     flex: 1,
+  },
+  replyText: {
+    fontSize: 13,
+    color: '#999',
   },
 }); 
