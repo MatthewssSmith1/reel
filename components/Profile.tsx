@@ -117,7 +117,7 @@ export function Profile({ userId, headerLeft, headerRight }: ProfileProps) {
               params: { 
                 postId: post.id, 
                 userId: post.author_id,
-                type: isAuthUser && activeTab === 'likes' ? 'liked' : 'posts'
+                type: isAuthUser && activeTab === 'likes' ? 'likes' : 'author'
               }
             });
           }}

@@ -151,6 +151,7 @@ const styles = StyleSheet.create({
     right: 16,
     bottom: 100,
     alignItems: 'center',
+    zIndex: 3,
   },
   loadingContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -164,6 +165,11 @@ const styles = StyleSheet.create({
     left: 16,
     bottom: 110,
     right: 90,
+    zIndex: 3,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
   descriptionText: {
     color: '#fff',

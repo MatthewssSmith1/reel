@@ -1,9 +1,10 @@
-import { StyleSheet, TextInput, Text, Keyboard } from 'react-native';
+import { StyleSheet, TextInput, Keyboard } from 'react-native';
 import { useState, useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThumbnailGrid } from '@/components/ThumbnailGrid';
 import { usePostStore } from '@/lib/postStore';
 import { ThemedView } from '@/components/ThemedView';
-import { ThumbnailGrid } from '@/components/ThumbnailGrid';
+import { router } from 'expo-router';
 import debounce from 'lodash/debounce';
 
 export default function ExploreScreen() {
@@ -22,12 +23,6 @@ export default function ExploreScreen() {
     []
   );
 
-  const ListEmptyComponent = useCallback(() => (
-    <ThemedView style={styles.noResults}>
-      <Text style={{ color: 'white' }}>{!searchQuery.trim() ? 'Enter a search term' : 'No results found'}</Text>
-    </ThemedView>
-  ), [searchQuery]);
-
   return (
     <ThemedView style={[styles.container, { paddingTop: top }]}>
       <ThemedView style={styles.searchContainer}>
@@ -41,11 +36,19 @@ export default function ExploreScreen() {
         />
       </ThemedView>
 
-      <ThumbnailGrid
-        posts={filteredPosts}
-        onScroll={() => Keyboard.dismiss()}
-        ListEmptyComponent={ListEmptyComponent}
-      />
+      <ThumbnailGrid 
+        posts={filteredPosts} 
+        onScroll={() => Keyboard.dismiss()} 
+        onPostPress={(post) => {
+          router.push({
+            pathname: '/(modals)/post',
+            params: { 
+              postId: post.id, 
+              userId: post.author_id,
+              type: 'all'
+            }
+          });
+        }} />
     </ThemedView>
   );
 }
@@ -66,11 +69,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
   },
-  noResults: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: 200,
-    width: '100%',
-  }
 });

@@ -9,14 +9,14 @@ export default function PostModal() {
   const { postId, userId, type } = useLocalSearchParams<{ 
     postId: string; 
     userId: string;
-    type: 'posts' | 'liked';
+    type: 'all' | 'author' | 'likes';
   }>();
   const { posts } = usePostStore();
   const { likedItems } = usePostLikeStore();
 
-  const displayedPosts = type === 'liked'
-    ? posts.filter(p => likedItems.get(p.id))
-    : posts.filter(p => p.author_id === userId);
+  let displayedPosts = posts;
+  if (type === 'likes') displayedPosts = posts.filter(p => likedItems.get(p.id));
+  if (type === 'author') displayedPosts = posts.filter(p => p.author_id === userId);
   
   const sortedPosts = displayedPosts.sort((a, b) => b.created_at.seconds - a.created_at.seconds);
   

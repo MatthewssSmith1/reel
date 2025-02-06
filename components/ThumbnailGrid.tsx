@@ -1,46 +1,29 @@
-import { StyleSheet, Pressable, Image, FlatList, Dimensions, View } from 'react-native';
+import { StyleSheet, Pressable, Image, FlatList, View, Text } from 'react-native';
+import { getScreenWidth } from '@/lib/utils';
 import { useThumbnails } from '@/hooks/useThumbnails';
 import { ThemedView } from '@/components/ThemedView';
-import { router } from 'expo-router';
 import { Post } from '@/lib/firebase';
 
 type ThumbnailGridProps = {
   posts: Post[];
-  ListEmptyComponent?: React.ComponentType | React.ReactElement;
+  onPostPress: (post: Post) => void;
   onScroll?: () => void;
   isScrollable?: boolean;
-  onPostPress?: (post: Post) => void;
 };
 
 export function ThumbnailGrid({ 
   posts, 
-  ListEmptyComponent, 
+  onPostPress, 
   onScroll, 
   isScrollable = true,
-  onPostPress 
 }: ThumbnailGridProps) {
   const thumbnails = useThumbnails(posts);
-
-  const handlePostPress = (post: Post) => {
-    if (onPostPress) {
-      onPostPress(post);
-    } else {
-      router.push({
-        pathname: '/(modals)/post',
-        params: { 
-          postId: post.id, 
-          userId: post.author_id,
-          type: 'posts'
-        }
-      });
-    }
-  };
 
   const renderThumbnail = (post: Post) => (
     <Pressable 
       key={post.id}
       style={styles.gridItem}
-      onPress={() => handlePostPress(post)}
+      onPress={() => onPostPress(post)}
     >
       {thumbnails[post.id] ? (
         <Image 
@@ -51,6 +34,12 @@ export function ThumbnailGrid({
         <ThemedView style={styles.placeholderVideo} />
       )}
     </Pressable>
+  );
+
+  const EmptyComponent = () => (
+    <ThemedView style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>No posts found</Text>
+    </ThemedView>
   );
 
   if (!isScrollable) {
@@ -66,19 +55,18 @@ export function ThumbnailGrid({
       data={posts}
       renderItem={({ item }) => renderThumbnail(item)}
       keyExtractor={post => post.id}
-      numColumns={GRID_ITEMS_PER_ROW}
+      numColumns={NUM_COLUMNS}
       onScroll={onScroll}
-      ListEmptyComponent={ListEmptyComponent}
+      ListEmptyComponent={EmptyComponent}
       columnWrapperStyle={styles.row}
       contentContainerStyle={styles.listContainer}
     />
   );
 }
 
-const { width } = Dimensions.get('window');
 const GRID_SPACING = 1;
-const GRID_ITEMS_PER_ROW = 3;
-const GRID_ITEM_WIDTH = (width - GRID_SPACING * (GRID_ITEMS_PER_ROW + 1)) / GRID_ITEMS_PER_ROW;
+const NUM_COLUMNS = 3;
+const ITEM_WIDTH = (getScreenWidth() - GRID_SPACING * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
 
 const styles = StyleSheet.create({
   wrappedGrid: {
@@ -95,8 +83,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   gridItem: {
-    width: GRID_ITEM_WIDTH,
-    height: GRID_ITEM_WIDTH * 1.5,
+    width: ITEM_WIDTH,
+    height: ITEM_WIDTH * 1.5,
     padding: GRID_SPACING,
   },
   thumbnail: {
@@ -107,4 +95,15 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 4,
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 200,
+    width: '100%',
+  },
+  emptyText: {
+    color: '#666',
+    fontSize: 16,
+  }
 }); 
