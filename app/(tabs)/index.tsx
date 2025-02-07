@@ -22,7 +22,7 @@ export default function FeedScreen() {
   const { authUser } = useUserStore();
 
   const displayedPosts = currentFeed === 'following' 
-    ? posts.filter(post => followedUsers.has(post.author_id))
+    ? posts.filter(post => followedUsers.has(post.author_id)).toReversed()
     : posts.filter(post => post.author_id !== authUser?.uid);
 
   if (isLoading || !isInitialized) return (
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1,
-    marginTop: 70,
+    marginTop: 55,
     backgroundColor: 'transparent',
   },
   tabButton: {

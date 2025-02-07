@@ -42,9 +42,8 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
   const { liked, optimisticCount, toggleLike } = useOptimisticLikes(post.id, post.likes_count, 'post');
   const videoRef = useRef<Video | null>(null);
   const thumbnailUri = useThumbnail(post); 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const { onPress, onStatusChange, isLoading, feedbackIcon, isFeedbackVisible } = useVideoControls(videoRef);
+  const controls = useVideoControls(videoRef);
 
   // const [videoUri, setVideoUri] = useState<string | null>(null);
   // const [error, setError] = useState<string | null>(null);
@@ -66,13 +65,6 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
   //   };
   //   loadVideo();
   // }, [post.video_id]);
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: isFeedbackVisible ? 1 : 0,
-      duration: 100,
-      useNativeDriver: true,
-    }).start();
-  }, [isFeedbackVisible]);
 
   return (
     <View style={styles.videoContainer}>
@@ -87,7 +79,7 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
         </View>
       )}
       {videoUri && ( */}
-      <Pressable onPress={onPress} style={styles.video}>
+      <Pressable onPress={controls.onPress} style={styles.video}>
         <Video
           isLooping
           ref={ref => {
@@ -99,18 +91,33 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
           style={StyleSheet.absoluteFill}
           resizeMode={ResizeMode.COVER}
           shouldPlay={shouldPlay}
-          onPlaybackStatusUpdate={onStatusChange}
+          onPlaybackStatusUpdate={controls.onStatusChange}
         />
+        {/* Progress bar */}
+        <View style={styles.progressBarContainer}>
+          <Animated.View 
+            style={[
+              styles.progressBar, 
+              { 
+                transform: [{
+                  scaleX: controls.progressAnim
+                }],
+                width: '100%',
+                transformOrigin: 'left'
+              }
+            ]} 
+          />
+        </View>
       </Pressable>
       {/* )} */}
-      {isLoading && (
+      {controls.isLoading && ( 
         <View style={styles.loadingContainer}>
           {thumbnailUri && <Image source={{ uri: thumbnailUri }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />}
           <ActivityIndicator size="large" color="#fff" />
         </View>
       )}
-      <Animated.View style={[styles.feedbackOverlay, { opacity: fadeAnim }]} pointerEvents="none">
-        <MaterialIcons name={feedbackIcon} size={48} color="white" />
+      <Animated.View style={[styles.feedbackOverlay, { opacity: controls.feedbackOpacity }]} pointerEvents="none">
+        <MaterialIcons name={controls.feedbackIcon} size={48} color="white" style={{ marginBottom: 50}} />
       </Animated.View>
       <View style={styles.descriptionContainer}>
         <ThemedText style={styles.descriptionText} numberOfLines={3}>
@@ -176,8 +183,8 @@ const styles = StyleSheet.create({
     bottom: 110,
     right: 90,
     zIndex: 3,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 4,
+    // backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    // borderRadius: 4,
     paddingHorizontal: 4,
     paddingVertical: 2,
   },
@@ -187,5 +194,17 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
+  },
+  progressBarContainer: {
+    position: 'absolute',
+    bottom: 83,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#fff',
   },
 }); 
