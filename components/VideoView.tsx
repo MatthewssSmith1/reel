@@ -1,15 +1,17 @@
-import { StyleSheet, View, ActivityIndicator, Pressable, Image } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Pressable, Image, Animated } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { getScreenHeight, getScreenWidth } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { useOptimisticLikes } from '@/hooks/useOptimisticLikes';
 import { useVideoControls } from '@/hooks/useVideoControls';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ToolbarButton } from './ToolbarButton';
 import { Post, storage } from '@/lib/firebase';
 import { useThumbnail } from '@/hooks/useThumbnails';
 import { ThemedText } from './ThemedText';
 import { router } from 'expo-router';
+
 
 const VIDEO_ASSETS: { [key: string]: number } = {
   '0': require('../assets/videos/0.mp4'),
@@ -40,8 +42,9 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
   const { liked, optimisticCount, toggleLike } = useOptimisticLikes(post.id, post.likes_count, 'post');
   const videoRef = useRef<Video | null>(null);
   const thumbnailUri = useThumbnail(post); 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const { onPress, onStatusChange, isLoading } = useVideoControls(videoRef);
+  const { onPress, onStatusChange, isLoading, feedbackIcon, isFeedbackVisible } = useVideoControls(videoRef);
 
   // const [videoUri, setVideoUri] = useState<string | null>(null);
   // const [error, setError] = useState<string | null>(null);
@@ -63,6 +66,13 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
   //   };
   //   loadVideo();
   // }, [post.video_id]);
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: isFeedbackVisible ? 1 : 0,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
+  }, [isFeedbackVisible]);
 
   return (
     <View style={styles.videoContainer}>
@@ -99,6 +109,9 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
           <ActivityIndicator size="large" color="#fff" />
         </View>
       )}
+      <Animated.View style={[styles.feedbackOverlay, { opacity: fadeAnim }]} pointerEvents="none">
+        <MaterialIcons name={feedbackIcon} size={48} color="white" />
+      </Animated.View>
       <View style={styles.descriptionContainer}>
         <ThemedText style={styles.descriptionText} numberOfLines={3}>
           {post.description}
@@ -149,6 +162,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 2,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  feedbackOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    zIndex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   descriptionContainer: {
     position: 'absolute',
