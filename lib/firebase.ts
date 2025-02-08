@@ -24,15 +24,28 @@ export type User = {
   posts_count: number
 }
 
+export type Recipe = {
+  title: string;
+  prepTime: string;
+  cookTime: string;
+  servings: number;
+  tags: string[];
+  ingredients: string[];
+  equipment: string[];
+  steps: string[];
+};
+
 export type Post = {
   id: string
   author_id: string
   video_id: string
   description: string
+  recipe: Recipe
   created_at: Timestamp
   likes_count: number
   comments_count: number
 }
+
 
 export type Like = {
   id: string;

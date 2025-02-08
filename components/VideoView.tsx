@@ -140,7 +140,7 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
           </TouchableOpacity>
         )}
         <ToolbarButton
-          name={"heart"}
+          name="heart"
           count={optimisticCount}
           color={liked ? '#FF2D55' : '#fff'}
           onPress={toggleLike}
@@ -149,6 +149,10 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
           name="chatbubble"
           count={post.comments_count}
           onPress={() => router.push({ pathname: '/(modals)/comments', params: { postId: post.id } })}
+        />
+        <ToolbarButton
+          name="restaurant"
+          onPress={() => router.push({ pathname: '/(modals)/recipe', params: { postId: post.id } })}
         />
       </View>
     </View>

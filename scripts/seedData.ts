@@ -1,4 +1,5 @@
 import { User, Post, Comment, Follow, PostLike, CommentLike } from '@/lib/firebase';
+import { RECIPES } from './seedRecipes';
 import * as utils from './seedUtils';
 
 const MAX_LIKES_PER_POST = 6;
@@ -37,7 +38,7 @@ const VIDEO_DESCRIPTIONS = [
   "Cherry tomatoes blistered in cast iron with garlic, thyme & flaky salt, finished with aged balsamic",
   "Steamed edamame pods tossed in Maldon salt, togarashi & sesame oil, served with charred lemon",
   "Classic spaghetti cacio e pepe with fresh pecorino, cracked black pepper & pasta water emulsion",
-  "Handmade orecchiette with broccoli rabe, Italian sausage, chili flakes & toasted breadcrumbs",
+  "Handmade orecchiette with broccoli, Italian sausage, chili flakes & toasted breadcrumbs",
   "Fluffy Japanese soufflé pancakes with maple butter, fresh berries & whipped mascarpone cream",
   "Ancient grain quinoa bowl with roasted vegetables, crispy chickpeas & lemon-tahini dressing",
   "72-hour cold-fermented pizza dough with 00 flour, yielding perfect leopard-spotted crust",
@@ -59,6 +60,7 @@ function generatePosts(): Post[] {
       author_id: author.uid,
       video_id: i.toString(),
       description,
+      recipe: RECIPES[i],
       created_at: utils.randomTimestamp(i, i + 3),
       likes_count: 0,
       comments_count: 0
