@@ -1,4 +1,4 @@
-import { StyleSheet, View, ActivityIndicator, Pressable, Image, Animated } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Pressable, Image, Animated, TouchableOpacity } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { getScreenHeight, getScreenWidth } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -6,12 +6,12 @@ import { ref, getDownloadURL } from 'firebase/storage';
 import { useOptimisticLikes } from '@/hooks/useOptimisticLikes';
 import { useVideoControls } from '@/hooks/useVideoControls';
 import { MaterialIcons } from '@expo/vector-icons';
-import { ToolbarButton } from './ToolbarButton';
+import { ToolbarButton, styles as toolbarStyles } from './ToolbarButton';
 import { Post, storage } from '@/lib/firebase';
 import { useThumbnail } from '@/hooks/useThumbnails';
+import { useUserStore } from '@/lib/userStore';
 import { ThemedText } from './ThemedText';
 import { router } from 'expo-router';
-
 
 const VIDEO_ASSETS: { [key: string]: number } = {
   '0': require('../assets/videos/0.mp4'),
@@ -40,10 +40,14 @@ type VideoViewProps = {
 
 export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = false }: VideoViewProps) {
   const { liked, optimisticCount, toggleLike } = useOptimisticLikes(post.id, post.likes_count, 'post');
+  const { users } = useUserStore();
   const videoRef = useRef<Video | null>(null);
   const thumbnailUri = useThumbnail(post); 
 
   const controls = useVideoControls(videoRef);
+
+  const author = users[post.author_id];
+  if (!author) return null;
 
   // const [videoUri, setVideoUri] = useState<string | null>(null);
   // const [error, setError] = useState<string | null>(null);
@@ -119,20 +123,24 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
       <Animated.View style={[styles.feedbackOverlay, { opacity: controls.feedbackOpacity }]} pointerEvents="none">
         <MaterialIcons name={controls.feedbackIcon} size={48} color="white" style={{ marginBottom: 50}} />
       </Animated.View>
-      <View style={styles.descriptionContainer}>
-        <ThemedText style={styles.descriptionText} numberOfLines={3}>
-          {post.description}
-        </ThemedText>
+      <View style={styles.textContainer}>
+        <ThemedText style={styles.usernameText}>@{author.username}</ThemedText>
+        <ThemedText style={styles.descriptionText}>{post.description}</ThemedText>
       </View>
       <View style={styles.toolbarContainer}>
         {!hideProfileButton && (
-          <ToolbarButton
-            name="person-circle"
+          <TouchableOpacity 
+            style={toolbarStyles.container} 
             onPress={() => router.push({ pathname: '/(modals)/user-profile', params: { userId: post.author_id } })}
-          />
+          >
+            <Image 
+              source={{ uri: author.avatar_url }} 
+              style={styles.avatarImage}
+            />
+          </TouchableOpacity>
         )}
         <ToolbarButton
-          name={liked ? "heart" : "heart-outline"}
+          name={"heart"}
           count={optimisticCount}
           color={liked ? '#FF2D55' : '#fff'}
           onPress={toggleLike}
@@ -177,21 +185,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  descriptionContainer: {
+  textContainer: {
     position: 'absolute',
     left: 16,
     bottom: 110,
     right: 90,
     zIndex: 3,
-    // backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    // borderRadius: 4,
     paddingHorizontal: 4,
     paddingVertical: 2,
+    gap: 4,
+  },
+  usernameText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '900',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   descriptionText: {
     color: '#fff',
     fontSize: 16,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
@@ -206,5 +221,10 @@ const styles = StyleSheet.create({
   progressBar: {
     height: '100%',
     backgroundColor: '#fff',
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
 }); 

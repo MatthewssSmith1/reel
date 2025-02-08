@@ -20,7 +20,7 @@ export function ToolbarButton({ name, count, color = '#fff', onPress }: ToolbarB
   );
 }
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     padding: 10,
