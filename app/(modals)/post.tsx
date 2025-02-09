@@ -1,9 +1,9 @@
 import { useLocalSearchParams, router } from 'expo-router';
 import { StyleSheet, Pressable, View } from 'react-native';
-import { usePostStore } from '@/lib/postStore';
-import { Ionicons } from '@expo/vector-icons';
 import { usePostLikeStore } from '@/lib/likeStore';
 import { VideoScrollView } from '@/components/VideoScrollView';
+import { usePostStore } from '@/lib/postStore';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function PostModal() {
   const { postId, userId, type } = useLocalSearchParams<{ 
@@ -35,7 +35,7 @@ export default function PostModal() {
         posts={sortedPosts}
         shouldPlay={true}
         initialIndex={initialIndex}
-        hideProfileButton
+        hideProfileButton={type !== 'all'}
       />
     </View>
   );

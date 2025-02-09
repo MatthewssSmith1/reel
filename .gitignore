@@ -37,6 +37,13 @@ yarn-error.*
 
 app-example
 
+# firebase
+.firebase/
+database-debug.log
+firebase-debug.log
+firestore-debug.log
+
+# other
 .vscode/
 .cursorrules
 docs/

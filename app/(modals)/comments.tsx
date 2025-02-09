@@ -5,10 +5,10 @@ import { useKeyboardVisibility } from '@/hooks/useKeyboardVisibility';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCommentStore } from '@/lib/commentStore';
 import { usePostStore } from '@/lib/postStore';
+import { CommentView } from '@/components/CommentView';
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { CommentView } from '@/components/CommentView';
 
 export default function CommentsModal() {
   const { comments, isLoading, submitComment, loadComments, replyTarget, setReplyTarget } = useCommentStore();
@@ -38,6 +38,7 @@ export default function CommentsModal() {
     await submitComment(postId, comment.trim());
     setComment('');
     setReplyTarget(null);
+    Keyboard.dismiss();
   };
 
   const post = posts.find(p => p.id === postId);
