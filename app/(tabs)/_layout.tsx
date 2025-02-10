@@ -8,7 +8,7 @@ import { usePostStore } from '@/lib/postStore';
 import { HapticTab } from '@/components/HapticTab';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '@/lib/colors';
 import { Tabs } from 'expo-router';
 
 export default function TabLayout() {
