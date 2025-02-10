@@ -8,6 +8,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import Toast from 'react-native-toast-message';
 import 'react-native-reanimated';
 
 SplashScreen.preventAutoHideAsync();
@@ -27,6 +28,7 @@ function AuthGuard() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(modals)" options={{ headerShown: false, presentation: 'modal' }} />
       </Stack>
+      <Toast topOffset={60} />
     </ThemeProvider>
   );
 }

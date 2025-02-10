@@ -6,12 +6,12 @@ const MAX_LIKES_PER_POST = 6;
 const MAX_LIKES_PER_COMMENT = 5;
 const MAX_COMMENTS_PER_POST = 10;
 const COMMENT_HAS_REPLIES_PROBABILITY = 0.5;
-const MAX_REPLIES_PER_COMMENT = 8;
-const MAX_FOLLOWERS_PER_USER = 4;
+const MAX_REPLIES_PER_COMMENT = 5;
+const MAX_FOLLOWERS_PER_USER = 5;
 
-function createUser(username: string, bio: string, uid?: string): User {
+function createUser(username: string, bio: string): User {
   return {
-    uid: uid || utils.generateId(),
+    uid: utils.generateId(28),
     username,
     avatar_url: `https://api.dicebear.com/7.x/avataaars/png?seed=${username}`,
     bio,
@@ -23,13 +23,13 @@ function createUser(username: string, bio: string, uid?: string): User {
 }
 
 const users: User[] = [
-  createUser('matt_smith', '🥘 Comfort food enthusiast & weekend baker', '5ddX4HwqJbbeqzgut2qeLXU1HfM2'),
-  createUser('sarah_parker', '🌮 Street food adventures & recipe collector'),
+  createUser('josef_whitney', '🥘 Comfort food enthusiast & weekend baker'),
+  createUser('aleks_mack', '🌮 Street food adventures & recipe collector'),
   createUser('mike_chen', '📸 Food photographer & noodle hunter'),
   createUser('alex_rodriguez', '🍝 Italian cuisine & pasta making'),
-  createUser('jane_smith', '🌱 Plant-based recipes & mindful eating'),
-  createUser('chef_maria', '👩‍🍳 Cooking up stories, one dish at a time'),
-  createUser('tom_nguyen', '🔪 Home cook exploring flavors')
+  createUser('marika_payne', '🌱 Plant-based recipes & mindful eating'),
+  createUser('yannick_pokorni', '👩‍🍳 Cooking up stories, one dish at a time'),
+  createUser('cynthia_amsel', '🔪 Home cook exploring flavors')
 ];
 
 const VIDEO_DESCRIPTIONS = [

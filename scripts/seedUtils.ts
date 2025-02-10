@@ -1,5 +1,6 @@
-import { doc, setDoc, Timestamp, collection, getDocs, deleteDoc, getFirestore } from 'firebase/firestore';
-import { firebaseConfig } from '../config';
+import { doc, setDoc, Timestamp, collection, getDocs, deleteDoc, getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { firebaseConfig, LOCAL_IP } from '../config';
+import * as firebaseJsonConfig from '../firebase.json';
 import { initializeApp } from 'firebase/app';
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -18,6 +19,7 @@ export const randomTimestamp = (minDaysAgo: number, maxDaysAgo: number): Timesta
 };
 
 const db = getFirestore(initializeApp(firebaseConfig));
+connectFirestoreEmulator(db, LOCAL_IP, firebaseJsonConfig.emulators.firestore.port);
 
 const clearCollection = async (collectionName: string) => {
   const querySnapshot = await getDocs(collection(db, collectionName));

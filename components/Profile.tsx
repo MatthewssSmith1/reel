@@ -1,15 +1,15 @@
 import { StyleSheet, Pressable, Image, ScrollView } from 'react-native';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { ThemedView as View } from '@/components/ThemedView';
+import { usePostLikeStore } from '@/lib/likeStore';
 import { useFollowStore } from '@/lib/followStore';
 import { ThumbnailGrid } from '@/components/ThumbnailGrid';
+import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserStore } from '@/lib/userStore';
 import { usePostStore } from '@/lib/postStore';
-import { router } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { usePostLikeStore } from '@/lib/likeStore';
+import { router } from 'expo-router';
 
 type ProfileProps = {
   userId: string;
@@ -193,9 +193,6 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    // borderTopWidth: StyleSheet.hairlineWidth,
-    // borderBottomWidth: StyleSheet.hairlineWidth,
-    // borderColor: '#ccc',
     marginBottom: 1,
   },
   tab: {
@@ -204,7 +201,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   activeTab: {
-    borderBottomWidth: 2,
-    // borderBottomColor: '#000',
+    backgroundColor: '#222',
   },
 }); 

@@ -1,35 +1,17 @@
 import { StyleSheet, View, ActivityIndicator, Pressable, Image, Animated, TouchableOpacity } from 'react-native';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { ToolbarButton, styles as toolbarStyles } from './ToolbarButton';
 import { getScreenHeight, getScreenWidth } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { useOptimisticLikes } from '@/hooks/useOptimisticLikes';
+import { Video, ResizeMode } from 'expo-av';
 import { useVideoControls } from '@/hooks/useVideoControls';
 import { MaterialIcons } from '@expo/vector-icons';
-import { ToolbarButton, styles as toolbarStyles } from './ToolbarButton';
 import { Post, storage } from '@/lib/firebase';
 import { useThumbnail } from '@/hooks/useThumbnails';
 import { useUserStore } from '@/lib/userStore';
 import { ThemedText } from './ThemedText';
 import { router } from 'expo-router';
-
-const VIDEO_ASSETS: { [key: string]: number } = {
-  '0': require('../assets/videos/0.mp4'),
-  '1': require('../assets/videos/1.mp4'),
-  '2': require('../assets/videos/2.mp4'),
-  '3': require('../assets/videos/3.mp4'),
-  '4': require('../assets/videos/4.mp4'),
-  '5': require('../assets/videos/5.mp4'),
-  '6': require('../assets/videos/6.mp4'),
-  '7': require('../assets/videos/7.mp4'),
-  '8': require('../assets/videos/8.mp4'),
-  '9': require('../assets/videos/9.mp4'),
-  '10': require('../assets/videos/10.mp4'),
-  '11': require('../assets/videos/11.mp4'),
-  '12': require('../assets/videos/12.mp4'),
-  '13': require('../assets/videos/13.mp4'),
-  '14': require('../assets/videos/14.mp4'),
-};
 
 type VideoViewProps = {
   post: Post;
@@ -39,50 +21,52 @@ type VideoViewProps = {
 };
 
 export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = false }: VideoViewProps) {
-  const { liked, optimisticCount, toggleLike } = useOptimisticLikes(post.id, post.likes_count, 'post');
-  const { users } = useUserStore();
-  const videoRef = useRef<Video | null>(null);
   const thumbnailUri = useThumbnail(post); 
 
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+    
+  const videoRef = useRef<Video | null>(null);
   const controls = useVideoControls(videoRef);
 
+  const { liked, optimisticCount, toggleLike } = useOptimisticLikes(post.id, post.likes_count, 'post');
+
+  const { users } = useUserStore();
   const author = users[post.author_id];
   if (!author) return null;
 
-  // const [videoUri, setVideoUri] = useState<string | null>(null);
-  // const [error, setError] = useState<string | null>(null);
-
-  // useEffect(() => {
-  //   const loadVideo = async () => {
-  //     try {
-  //       setIsLoading(true);
-  //       setError(null);
-  //       const videoRef = ref(storage, `videos/${post.video_id}.mp4`);
-  //       const url = await getDownloadURL(videoRef);
-  //       setVideoUri(url);
-  //     } catch (error) {
-  //       console.error('Error loading video:', error);
-  //       setError('Failed to load video');
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
-  //   loadVideo();
-  // }, [post.video_id]);
+  useEffect(() => {
+    const loadVideo = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const videoRef = ref(storage, `videos/${post.video_id}.mp4`);
+        const url = await getDownloadURL(videoRef);
+        setVideoUri(url);
+      } catch (error) {
+        console.error('Error loading video:', error);
+        setError('Failed to load video');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadVideo();
+  }, [post.video_id]);
 
   return (
     <View style={styles.videoContainer}>
-      {/* {isLoading && (
+      {(isLoading || error) && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#fff" />
         </View>
       )}
-      {error && (
+      {/* {error && (
         <View style={styles.errorContainer}>
           <ThemedText style={styles.errorText}>{error}</ThemedText>
         </View>
-      )}
-      {videoUri && ( */}
+      )} */}
+      {videoUri && (
       <Pressable onPress={controls.onPress} style={styles.video}>
         <Video
           isLooping
@@ -90,14 +74,12 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
             videoRef.current = ref;
             setVideoRef(ref);
           }}
-          // source={{ uri: videoUri }}
-          source={VIDEO_ASSETS[post.video_id]}
+          source={{ uri: videoUri }}
           style={StyleSheet.absoluteFill}
           resizeMode={ResizeMode.COVER}
           shouldPlay={shouldPlay}
           onPlaybackStatusUpdate={controls.onStatusChange}
         />
-        {/* Progress bar */}
         <View style={styles.progressBarContainer}>
           <Animated.View 
             style={[
@@ -113,7 +95,7 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
           />
         </View>
       </Pressable>
-      {/* )} */}
+      )}
       {controls.isLoading && ( 
         <View style={styles.loadingContainer}>
           {thumbnailUri && <Image source={{ uri: thumbnailUri }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />}

@@ -4,6 +4,7 @@ import { useFollowStore } from '@/lib/followStore';
 import { useUserStore } from '@/lib/userStore';
 import { usePostStore } from '@/lib/postStore';
 import { create } from 'zustand';
+import Toast from 'react-native-toast-message';
 
 type Feed = 'following' | 'for-you';
 
@@ -13,7 +14,6 @@ const useFeedStore = create<FeedStore>((set) => ({
   currentFeed: 'for-you',
   setCurrentFeed: (feed: Feed) => set({ currentFeed: feed }),
 }));
-
 
 export default function FeedScreen() {
   const { followedUsers, isInitialized } = useFollowStore();
@@ -35,7 +35,7 @@ export default function FeedScreen() {
     <View style={styles.container}>
       <VideoScrollView posts={displayedPosts} shouldPlay={true} />
       <View style={styles.tabContainer}>
-        <TabButton title="Following" feed="following" />
+        <TabButton title="Following" feed="following" disabled={followedUsers.size === 0} />
         <View style={styles.divider} />
         <TabButton title="For You" feed="for-you" />
       </View>
@@ -43,10 +43,21 @@ export default function FeedScreen() {
   );
 }
 
-function TabButton({ title, feed }: { title: string; feed: Feed }) {
+function TabButton({ title, feed, disabled }: { title: string; feed: Feed; disabled?: boolean }) {
   const { currentFeed, setCurrentFeed } = useFeedStore();
+
+  const onPress = () => {
+    if (disabled) return Toast.show({
+      type: 'info',
+      text1: 'Start Following People!',
+      text2: 'Follow other users to see their posts in this feed.',
+    });
+
+    setCurrentFeed(feed);
+  };
+
   return (
-    <Pressable style={styles.tabButton} onPress={() => setCurrentFeed(feed)}>
+    <Pressable style={styles.tabButton} onPress={onPress}>
       <Text style={[styles.tabText, currentFeed === feed && styles.activeTabText]}>{title}</Text>
     </Pressable>
   );

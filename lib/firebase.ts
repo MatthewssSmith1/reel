@@ -1,9 +1,11 @@
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import { initializeAuth, getReactNativePersistence, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator, Timestamp } from 'firebase/firestore';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Timestamp } from 'firebase/firestore';
+import { firebaseConfig, LOCAL_IP } from '@/config';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import { firebaseConfig } from '@/config';
-import { getStorage } from 'firebase/storage';
+import * as firebaseJsonConfig from '../firebase.json';
 
 export const app: FirebaseApp = initializeApp(firebaseConfig);
 
@@ -12,6 +14,15 @@ export const auth = initializeAuth(app, {
 });
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
+
+if (__DEV__) {
+  const emulators = firebaseJsonConfig.emulators;
+  connectAuthEmulator(auth, `http://${LOCAL_IP}:9099`);
+  connectFirestoreEmulator(db, LOCAL_IP, emulators.firestore.port);
+  connectStorageEmulator(storage, LOCAL_IP, emulators.storage.port);
+  connectFunctionsEmulator(functions, LOCAL_IP, emulators.functions.port);
+}
 
 export type User = {
   uid: string
@@ -45,7 +56,6 @@ export type Post = {
   likes_count: number
   comments_count: number
 }
-
 
 export type Like = {
   id: string;

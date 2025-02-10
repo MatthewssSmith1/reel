@@ -38,6 +38,7 @@ yarn-error.*
 app-example
 
 # firebase
+data/
 .firebase/
 database-debug.log
 firebase-debug.log
