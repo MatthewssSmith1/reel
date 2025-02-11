@@ -3,7 +3,7 @@ import { RECIPES } from './seedRecipes';
 import * as utils from './seedUtils';
 
 const MAX_LIKES_PER_POST = 6;
-const MAX_LIKES_PER_COMMENT = 5;
+const MAX_LIKES_PER_COMMENT = 4;
 const MAX_COMMENTS_PER_POST = 10;
 const COMMENT_HAS_REPLIES_PROBABILITY = 0.5;
 const MAX_REPLIES_PER_COMMENT = 5;
@@ -204,9 +204,10 @@ function generateLikes<T extends { likes_count: number }>(
 
 async function seedDatabase() {
   try {
-    const recipes = RECIPES.map(recipe => ({
+    const recipes = RECIPES.map((recipe, i) => ({
       ...recipe,
-      id: utils.generateId()
+      id: utils.generateId(),
+      author_id: users[i % users.length].uid
     }));
 
     const posts = generatePosts(recipes);

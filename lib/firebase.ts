@@ -38,6 +38,7 @@ export type User = {
 export type Recipe = {
   id: string
   parent_id?: string
+  author_id: string
   title: string;
   prepTime: string;
   cookTime: string;
