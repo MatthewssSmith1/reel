@@ -1,89 +1,95 @@
-import { StyleSheet, ScrollView } from 'react-native';
+import { StyleSheet, ScrollView, TextInput, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { ThemedText as Text } from '@/components/ThemedText';
-import { ThemedView as View } from '@/components/ThemedView';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { Ionicons } from '@expo/vector-icons';
-import { usePostStore } from '@/lib/postStore';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRecipeStore } from '@/lib/recipeStore';
-import { useMemo } from 'react';
+import { usePostStore } from '@/lib/postStore';
+import { RecipeList } from '@/components/RecipeList';
+import { ChatModal } from '@/components/ChatModal';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function RecipeModal() {
-  const { postId } = useLocalSearchParams<{ postId: string }>();
-  const backgroundColor = useThemeColor({}, 'background');
-  const iconColor = useThemeColor({light: '#fff', dark: '#000'}, 'text');
+function usePostRecipe(postId: string) {
   const posts = usePostStore(state => state.posts);
   const recipes = useRecipeStore(state => state.recipes);
   
-  const recipe = useMemo(() => {
+  return useMemo(() => {
     const post = posts.find(p => p.id === postId);
     if (!post) return null;
     return recipes.find(r => r.id === post.recipe_id);
   }, [posts, postId, recipes]);
+}
+
+export default function RecipeModal() {
+  const { postId } = useLocalSearchParams<{ postId: string }>();
+  const recipe = usePostRecipe(postId);
+
+  const inputRef = useRef<TextInput>(null);
+
+  const { bottom } = useSafeAreaInsets();
+  
+  const [instruction, setInstruction] = useState('');
+  const onSubmit = async () => {
+    if (!instruction.trim()) return;
+    // TODO: implement recipe modification cloud function
+    setInstruction('');
+  };
 
   if (!recipe) {
     return (
-      <View style={[styles.container, { backgroundColor }]}>
+      <View style={styles.container}>
         <Text>Recipe not found</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor }]}>
-      <View style={styles.section}>
+    <ChatModal
+      ref={inputRef}
+      value={instruction}
+      onChangeText={setInstruction}
+      onSubmit={onSubmit}
+      placeholder="Modify this recipe..."
+      iconName="color-wand"
+    >
+      <ScrollView 
+        style={[styles.container, { backgroundColor: 'transparent' }]}
+        contentContainerStyle={{ paddingBottom: bottom + 60 }}
+      >
         <Text style={styles.title}>{recipe.title}</Text>
-        <View style={styles.badgeRow}>
-          <View style={styles.badge}>
-            <Ionicons name="time-outline" size={16} color={iconColor} />
-            <Text style={styles.badgeText}>Prep: {recipe.prepTime}</Text>
+        <View style={[styles.section, { gap: 10 }]}>
+          <View style={styles.badgeRow}>
+            <Badge icon="time-outline" text={`Prep: ${recipe.prepTime}`} />
+            <Badge icon="time-outline" text={`Cook: ${recipe.cookTime}`} />
+            <Badge icon="people-outline" text={`Serves: ${recipe.servings}`} />
           </View>
-          <View style={styles.badge}>
-            <Ionicons name="time-outline" size={16} color={iconColor} />
-            <Text style={styles.badgeText}>Cook: {recipe.cookTime}</Text>
-          </View>
-          <View style={styles.badge}>
-            <Ionicons name="people-outline" size={16} color={iconColor} />
-            <Text style={styles.badgeText}>Serves: {recipe.servings}</Text>
+          <View style={styles.badgeRow}>
+            {recipe.tags.map((tag, index) => (
+              <Badge key={index} text={tag} bgColor="#333" color="#fff" />
+            ))}
           </View>
         </View>
-        <View style={styles.badgeRow}>
-          {recipe.tags.map((tag, index) => (
-            <View style={[styles.badge, { backgroundColor: '#333' }]} key={index}>
-              <Text style={[styles.badgeText, { color: '#fff' }]}>{tag}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
 
-      <List title="Ingredients" items={recipe.ingredients} />
-      <List title="Equipment" items={recipe.equipment} />
-      <List title="Steps" items={recipe.steps} ordered />
-
-    </ScrollView>
+        <RecipeList title="Ingredients" items={recipe.ingredients} icon="leaf" />
+        <RecipeList title="Steps" items={recipe.steps} ordered icon="document-text" />
+        <RecipeList title="Equipment" items={recipe.equipment} icon="cube" />
+      </ScrollView>
+    </ChatModal>
   );
 }
 
-interface ListProps {
-  title: string;
-  items: string[];
-  ordered?: boolean;
+type BadgeProps = {
+  text: string;
+  icon?: React.ComponentProps<typeof Ionicons>['name'];
+  color?: string;
+  bgColor?: string;
 }
 
-function List({ title, items, ordered = false }: ListProps) {
+function Badge({ text, icon, color, bgColor }: BadgeProps) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.list}>
-        {items.map((item, index) => (
-          <View key={index} style={styles.item}>
-            <Text style={ordered ? styles.orderedPrefix : styles.unorderedPrefix}>
-              {ordered ? `${index + 1}.` : '•'}
-            </Text>
-            <Text>{item}</Text>
-          </View>
-        ))}
-      </View>
+    <View style={[styles.badge, bgColor ? { backgroundColor: bgColor } : undefined]}>
+      {icon && <Ionicons name={icon} size={16} color={color ?? '#000'} />}
+      <Text style={[styles.badgeText, color ? { color } : undefined]}>{text}</Text>
     </View>
   );
 }
@@ -94,8 +100,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   section: {
-    marginBottom: 24,
-    padding: 6,
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
@@ -107,7 +112,6 @@ const styles = StyleSheet.create({
   badgeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 12,
     gap: 8,
   },
   badge: {
@@ -122,32 +126,5 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     color: '#000',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#fff',
-  },
-  list: {
-    gap: 14,
-    width: '100%',
-  },
-  item: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-    paddingRight: 35,
-  },
-  orderedPrefix: {
-    color: '#777',
-    fontWeight: 'bold',
-    marginLeft: 4,
-  },
-  unorderedPrefix: {
-    color: '#777',
-    fontWeight: 'bold',
-    marginLeft: 4,
-    transform: [{ scale: 1.5 }],
   },
 });

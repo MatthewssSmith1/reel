@@ -1,24 +1,21 @@
-import { StyleSheet, TouchableOpacity, TextInput, View, FlatList, Keyboard, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, FlatList, Keyboard, ActivityIndicator, TextInput } from 'react-native';
+import { ChatModal, styles as modalStyles, ICON_SIZE } from '@/components/ChatModal';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
-import { useKeyboardVisibility } from '@/hooks/useKeyboardVisibility';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCommentStore } from '@/lib/commentStore';
 import { usePostStore } from '@/lib/postStore';
 import { CommentView } from '@/components/CommentView';
 import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 
 export default function CommentsModal() {
   const { comments, isLoading, submitComment, loadComments, replyTarget, setReplyTarget } = useCommentStore();
   const { postId } = useLocalSearchParams<{ postId: string }>();
-  const isKeyboardVisible = useKeyboardVisibility();
   const { bottom } = useSafeAreaInsets();
   const { posts } = usePostStore();
-
-  const [comment, setComment] = useState('');
   const inputRef = useRef<TextInput>(null);
+  const [comment, setComment] = useState('');
 
   useEffect(() => {
     loadComments(postId);
@@ -35,101 +32,73 @@ export default function CommentsModal() {
 
   const onSubmit = async () => {
     if (!comment.trim()) return;
-    await submitComment(postId, comment.trim());
-    setComment('');
-    setReplyTarget(null);
-    Keyboard.dismiss();
+    console.log('Submitting comment:', { postId, comment: comment.trim() });
+    try {
+      await submitComment(postId, comment.trim());
+      console.log('Comment submitted successfully');
+      setComment('');
+      setReplyTarget(null);
+      Keyboard.dismiss();
+    } catch (error) {
+      console.error('Failed to submit comment:', error);
+    }
   };
 
   const post = posts.find(p => p.id === postId);
   if (!post) return null;
 
+  const replyButton = replyTarget && (
+    <TouchableOpacity style={modalStyles.button} onPress={() => setReplyTarget(null)}>
+      <Ionicons name="chevron-back" color="white" size={ICON_SIZE} />
+    </TouchableOpacity>
+  );
+
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 50 : 0}
-      style={styles.container}
+    <ChatModal
+      ref={inputRef}
+      value={comment}
+      onChangeText={setComment}
+      onSubmit={onSubmit}
+      leftButton={replyButton}
+      placeholder={replyTarget ? "Write a reply..." : "Write a comment..."}
+      iconName={replyTarget ? "arrow-redo" : "paper-plane"}
+      paddingTop={36}
     >
-      <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
-      <View style={styles.sheet}>
-        <ThemedText style={styles.title}>{comments?.length ?? 0} comments</ThemedText>
-        <TouchableOpacity 
-          style={styles.closeButton} 
-          onPress={() => {
-            setComment('');
-            setReplyTarget(null);
-            Keyboard.dismiss();
-            router.back();
-          }}
-        >
-          <Ionicons name="close" color="white" size={18} />
-        </TouchableOpacity>
-        
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#fff" />
-          </View>
-        ) : (
-          <FlatList
-            data={comments}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <CommentView comment={item} />
-            )}
-            style={styles.commentsList}
-            contentContainerStyle={{ paddingTop: 0, paddingBottom: bottom + 60 }}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-          />
-        )}
-        <View style={[styles.inputContainer, { paddingBottom: Math.max(bottom, 10) }]}>
-          {replyTarget && (
-            <TouchableOpacity style={styles.sendButton} onPress={() => setReplyTarget(null)}>
-              <Ionicons name="chevron-back" color="white" size={18} />
-            </TouchableOpacity>
-          )}
-          {!replyTarget && (
-            <TouchableOpacity 
-              style={[styles.sendButton, !isKeyboardVisible && { opacity: 0.5 }]} 
-              onPress={() => Keyboard.dismiss()}
-              disabled={!isKeyboardVisible}
-            >
-              <Ionicons name="chevron-down" color="white" size={18} />
-            </TouchableOpacity>
-          )}
-          <TextInput
-            ref={inputRef}
-            style={styles.input}
-            placeholder={replyTarget ? "Write a reply..." : "Write a comment..."}
-            placeholderTextColor="#666"
-            value={comment}
-            onChangeText={setComment}
-            onSubmitEditing={onSubmit}
-            multiline
-          />
-          <TouchableOpacity 
-            style={styles.sendButton} 
-            onPress={onSubmit}
-          >
-            <Ionicons name={replyTarget ? "arrow-redo" : "paper-plane"} color="white" size={18} />
-          </TouchableOpacity>
+      <ThemedText style={styles.title}>{post.comments_count} comments</ThemedText>
+      <TouchableOpacity 
+        style={styles.closeButton} 
+        onPress={() => {
+          setComment('');
+          setReplyTarget(null);
+          Keyboard.dismiss();
+          router.back();
+        }}
+      >
+        <Ionicons name="close" color="white" size={ICON_SIZE} />
+      </TouchableOpacity>
+      
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#fff" />
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      ) : (
+        <FlatList
+          data={comments}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <CommentView comment={item} />
+          )}
+          style={styles.commentsList}
+          contentContainerStyle={{ paddingTop: 0, paddingBottom: bottom + 60 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+        />
+      )}
+    </ChatModal>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  sheet: {
-    height: '100%',
-    width: '100%',
-    backgroundColor: 'rgba(27, 27, 27, 0.9)',
-    paddingTop: 36,
-  },
   title: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -153,41 +122,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  inputContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    padding: 10,
-    backgroundColor: 'rgba(40, 40, 40, 0.95)',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#333',
-  },
-  input: {
-    flex: 1,
-    color: 'white',
-    fontSize: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#1f1f1f',
-    borderRadius: 20,
-    maxHeight: 100,
-  },
-  sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   commentsList: {
     flex: 1,
-  },
-  replyText: {
-    fontSize: 13,
-    color: '#999',
   },
 }); 
