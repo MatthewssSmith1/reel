@@ -1,38 +1,60 @@
-import { StyleSheet, ScrollView, TextInput, View } from 'react-native';
+import { StyleSheet, ScrollView, TextInput, View, ActivityIndicator } from 'react-native';
 import { useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRecipeStore } from '@/lib/recipeStore';
+import { httpsCallable } from 'firebase/functions';
 import { usePostStore } from '@/lib/postStore';
 import { RecipeList } from '@/components/RecipeList';
 import { ChatModal } from '@/components/ChatModal';
-import { Ionicons } from '@expo/vector-icons';
+import { functions } from '@/lib/firebase';
+import { Ionicons } from '@expo/vector-icons'
+import { Recipe } from '@/lib/firebase';
+
 
 function usePostRecipe(postId: string) {
-  const posts = usePostStore(state => state.posts);
-  const recipes = useRecipeStore(state => state.recipes);
+  const { posts } = usePostStore();
+  const { recipes, addRecipe } = useRecipeStore();
   
-  return useMemo(() => {
+  const recipe = useMemo(() => {
     const post = posts.find(p => p.id === postId);
     if (!post) return null;
-    return recipes.find(r => r.id === post.recipe_id);
+    return recipes.find(r => r.parent_id === post.recipe_id)
+        || recipes.find(r => r.id === post.recipe_id)
   }, [posts, postId, recipes]);
+
+  return { recipe, addRecipe };
 }
 
 export default function RecipeModal() {
   const { postId } = useLocalSearchParams<{ postId: string }>();
-  const recipe = usePostRecipe(postId);
+  const { recipe, addRecipe } = usePostRecipe(postId);
+  const [isLoading, setIsLoading] = useState(false);
 
   const inputRef = useRef<TextInput>(null);
-
   const { bottom } = useSafeAreaInsets();
-  
   const [instruction, setInstruction] = useState('');
+
   const onSubmit = async () => {
-    if (!instruction.trim()) return;
-    // TODO: implement recipe modification cloud function
-    setInstruction('');
+    if (!instruction || !recipe) return;
+    
+    setIsLoading(true);
+    try {
+      const modifyRecipeFn = httpsCallable(functions, 'modifyRecipe');
+      const result = await modifyRecipeFn({
+        recipeId: recipe.id,
+        instruction: instruction.trim(),
+      });
+
+      const newRecipe = result.data as Recipe;
+      addRecipe(newRecipe);
+      setInstruction('');
+    } catch (error) {
+      console.error('Failed to modify recipe:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!recipe) {
@@ -74,6 +96,11 @@ export default function RecipeModal() {
         <RecipeList title="Steps" items={recipe.steps} ordered icon="document-text" />
         <RecipeList title="Equipment" items={recipe.equipment} icon="cube" />
       </ScrollView>
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
+      )}
     </ChatModal>
   );
 }
@@ -126,5 +153,12 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     color: '#000',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
 });

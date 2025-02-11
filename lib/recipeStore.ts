@@ -6,6 +6,7 @@ type RecipeStore = {
   recipes: Recipe[]
   isLoading: boolean
   loadRecipes: () => Promise<void>
+  addRecipe: (recipe: Recipe) => void
 }
 
 export const useRecipeStore = create<RecipeStore>((set) => ({
@@ -22,5 +23,16 @@ export const useRecipeStore = create<RecipeStore>((set) => ({
       console.log(error)
       set({ isLoading: false })
     }
+  },
+  addRecipe: (recipe: Recipe) => {
+    set((state) => {
+      const recipes = [...state.recipes];
+      const existingIndex = recipes.findIndex(r => r.id === recipe.id);
+      
+      if (existingIndex !== -1) recipes[existingIndex] = recipe;
+      else recipes.push(recipe);
+      
+      return { recipes };
+    });
   }
-})) 
+}))
