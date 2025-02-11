@@ -2,6 +2,7 @@ import { usePostLikeStore, useCommentLikeStore } from '@/lib/likeStore';
 import React, { useEffect } from 'react';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useFollowStore } from '@/lib/followStore';
+import { useRecipeStore } from '@/lib/recipeStore';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useUserStore } from '@/lib/userStore';
 import { usePostStore } from '@/lib/postStore';
@@ -17,6 +18,7 @@ export default function TabLayout() {
   const { loadLikes: loadPostLikes } = usePostLikeStore();
   const { loadLikes: loadCommentLikes } = useCommentLikeStore();
   const { loadFollows } = useFollowStore();
+  const { loadRecipes } = useRecipeStore();
   const { loadPosts } = usePostStore();
   const { user } = useAuth();
 
@@ -27,6 +29,7 @@ export default function TabLayout() {
     loadPostLikes();
     loadCommentLikes();
     loadPosts();
+    loadRecipes();
     loadFollows(user.uid);
   }, [user?.uid]); 
 

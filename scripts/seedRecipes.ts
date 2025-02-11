@@ -1,6 +1,6 @@
 import { Recipe } from '@/lib/firebase';
 
-export const RECIPES: Recipe[] = [
+export const RECIPES: Omit<Recipe, 'id'>[] = [
   {
     title: "Smashed Beef Patty Burger",
     prepTime: "10 minutes",

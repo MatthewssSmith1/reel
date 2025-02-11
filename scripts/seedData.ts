@@ -1,4 +1,4 @@
-import { User, Post, Comment, Follow, PostLike, CommentLike } from '@/lib/firebase';
+import { User, Post, Comment, Follow, PostLike, CommentLike, Recipe } from '@/lib/firebase';
 import { RECIPES } from './seedRecipes';
 import * as utils from './seedUtils';
 
@@ -50,7 +50,7 @@ const VIDEO_DESCRIPTIONS = [
   "Wild mushroom soup with shiitake, porcini & cremini blend, finished with truffle oil & fresh thyme"
 ];
 
-function generatePosts(): Post[] {
+function generatePosts(recipes: Recipe[]): Post[] {
   const posts: Post[] = [];
   
   VIDEO_DESCRIPTIONS.forEach((description, i) => {
@@ -60,7 +60,7 @@ function generatePosts(): Post[] {
       author_id: author.uid,
       video_id: i.toString(),
       description,
-      recipe: RECIPES[i],
+      recipe_id: recipes[i].id,
       created_at: utils.randomTimestamp(i, i + 3),
       likes_count: 0,
       comments_count: 0
@@ -204,7 +204,12 @@ function generateLikes<T extends { likes_count: number }>(
 
 async function seedDatabase() {
   try {
-    const posts = generatePosts();
+    const recipes = RECIPES.map(recipe => ({
+      ...recipe,
+      id: utils.generateId()
+    }));
+
+    const posts = generatePosts(recipes);
     let comments = generateComments(posts);
     comments = [...comments, ...generateReplies(posts, comments)];
     
@@ -236,6 +241,7 @@ async function seedDatabase() {
 
     await Promise.all([
       utils.seedCollection('users', users),
+      utils.seedCollection('recipes', recipes),
       utils.seedCollection('posts', posts),
       utils.seedCollection('comments', comments),
       utils.seedCollection('post_likes', postLikes as PostLike[]),

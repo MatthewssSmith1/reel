@@ -5,6 +5,7 @@ import { ThemedView as View } from '@/components/ThemedView';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostStore } from '@/lib/postStore';
+import { useRecipeStore } from '@/lib/recipeStore';
 import { useMemo } from 'react';
 
 export default function RecipeModal() {
@@ -12,11 +13,13 @@ export default function RecipeModal() {
   const backgroundColor = useThemeColor({}, 'background');
   const iconColor = useThemeColor({light: '#fff', dark: '#000'}, 'text');
   const posts = usePostStore(state => state.posts);
+  const recipes = useRecipeStore(state => state.recipes);
   
   const recipe = useMemo(() => {
     const post = posts.find(p => p.id === postId);
-    return post?.recipe;
-  }, [posts, postId]);
+    if (!post) return null;
+    return recipes.find(r => r.id === post.recipe_id);
+  }, [posts, postId, recipes]);
 
   if (!recipe) {
     return (

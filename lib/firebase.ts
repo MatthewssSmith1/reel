@@ -36,6 +36,8 @@ export type User = {
 }
 
 export type Recipe = {
+  id: string
+  parent_id?: string
   title: string;
   prepTime: string;
   cookTime: string;
@@ -51,7 +53,7 @@ export type Post = {
   author_id: string
   video_id: string
   description: string
-  recipe: Recipe
+  recipe_id: string
   created_at: Timestamp
   likes_count: number
   comments_count: number
