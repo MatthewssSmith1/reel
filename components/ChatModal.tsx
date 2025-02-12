@@ -17,6 +17,8 @@ type ChatModalProps = {
   iconName?: keyof typeof Ionicons.glyphMap;
   paddingTop?: number;
   disabled?: boolean;
+  submitDisabled?: boolean;
+  aboveTextInput?: ReactNode;
 };
 
 export const ChatModal = forwardRef<TextInput, ChatModalProps>(({ 
@@ -29,6 +31,8 @@ export const ChatModal = forwardRef<TextInput, ChatModalProps>(({
   iconName = "paper-plane",
   paddingTop = 0,
   disabled = false,
+  submitDisabled = false,
+  aboveTextInput,
 }, ref) => {
   const isKeyboardVisible = useKeyboardVisibility();
   const { bottom } = useSafeAreaInsets();
@@ -58,6 +62,11 @@ export const ChatModal = forwardRef<TextInput, ChatModalProps>(({
       <View style={[styles.sheet, { paddingTop }]}>
         {children}
         <View style={[styles.inputContainer, { paddingBottom: Math.max(bottom, 10) }]}>
+          {aboveTextInput && (
+            <View style={{ position: 'absolute', top: 0, transform: [{ translateY: '-100%' }], left: 0, right: 0, alignItems: 'center' }}>
+              {aboveTextInput}
+            </View>
+          )}
           {leftButton || defaultLeftButton}
           <TextInput
             ref={ref}
@@ -73,9 +82,9 @@ export const ChatModal = forwardRef<TextInput, ChatModalProps>(({
           <TouchableOpacity 
             style={styles.button} 
             onPress={handleSubmit}
-            disabled={disabled}
+            disabled={disabled || submitDisabled}
           >
-            <Ionicons name={iconName} color="white" size={ICON_SIZE} />
+            <Ionicons name={iconName} color={disabled || submitDisabled ? '#666' : '#fff'} size={ICON_SIZE} />
           </TouchableOpacity>
         </View>
       </View>

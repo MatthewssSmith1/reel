@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "emulators": "firebase emulators:start --import=./data --export-on-exit",
-    "start": "expo start --lan",
+    "start": "expo start --tunnel",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",

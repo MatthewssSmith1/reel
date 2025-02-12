@@ -20,8 +20,8 @@ export function Badge({ text, icon, color, bgColor }: Props) {
 
 const styles = StyleSheet.create({
   badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
     borderRadius: 16,
     backgroundColor: '#fff',
     flexDirection: 'row',
