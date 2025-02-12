@@ -1,72 +1,68 @@
-import { collection, getDocs, query, where, or } from 'firebase/firestore'
+import { collection, getDocs, query, where, or, doc, deleteDoc } from 'firebase/firestore'
 import { diffLines, diffWords, Change } from 'diff'
-import { Recipe, db, Post } from '@/lib/firebase'
+import { Recipe, db, functions } from '@/lib/firebase'
 import { httpsCallable } from 'firebase/functions'
-import { functions } from '@/lib/firebase'
 import { create } from 'zustand'
 
 type RecipeStore = {
   recipes: Recipe[]
   currentRecipe: Recipe | null
-  diff: Change[][] | null 
+  diff: Change[][][] | null 
   isLoading: boolean
+  flashTimestamp: number
   loadRecipes: (userId: string) => Promise<void>
   openRecipe: (recipeId: string) => void
   modifyRecipe: (instruction: string) => Promise<void>
+  resetRecipe: () => void
+  flashChanges: () => void
 }
 
-// TODO: refactor to use diffLines(...) from diff
-function diffRecipes(recipeA: Recipe, recipeB: Recipe): Change[][] {
-  // Convert recipes to arrays of lines for comparison
-  const linesA = [...recipeA.ingredients, ...recipeA.steps, ...recipeA.equipment]
-  const linesB = [...recipeB.ingredients, ...recipeB.steps, ...recipeB.equipment]
+function diffRecipes(recipeA: Recipe, recipeB: Recipe): Change[][][] {
+  const sections = [
+    { a: recipeA.ingredients, b: recipeB.ingredients },
+    { a: recipeA.steps, b: recipeB.steps },
+    { a: recipeA.equipment, b: recipeB.equipment }
+  ]
 
-  // First diff the lines to identify which ones changed
-  const lineDiffs = diffWords(linesA.join('\n'), linesB.join('\n'))
+  return sections.map(({ a, b }) => {
+    const lineDiffs = diffWords(a.join('\n'), b.join('\n'))
+    const result: Change[][] = []
+    let currentLine: Change[] = []
 
-  // Split the diffs back into lines and process each line
-  const result: Change[][] = []
-  let currentLine: Change[] = []
-
-  // Helper to add a line to result and start a new one
-  const finishLine = () => {
-    if (currentLine.length > 0) {
-      // Filter out removed content as we only want to show unchanged and new
-      const filteredLine = currentLine.filter(change => !change.removed)
-      if (filteredLine.length > 0) {
-        result.push(filteredLine)
+    const finishLine = () => {
+      if (currentLine.length > 0) {
+        const filteredLine = currentLine.filter(change => !change.removed)
+        if (filteredLine.length > 0) {
+          result.push(filteredLine)
+        }
+        currentLine = []
       }
-      currentLine = []
     }
-  }
 
-  for (const change of lineDiffs) {
-    if (change.value.includes('\n')) {
-      // Handle multi-line changes
-      const lines = change.value.split('\n')
-      lines.forEach((line, i) => {
-        if (line.length > 0) {
-          currentLine.push({
-            value: line,
-            added: change.added || false,
-            removed: change.removed || false,
-            count: 1
-          })
-        }
-        if (i < lines.length - 1) {
-          finishLine()
-        }
-      })
-    } else if (change.value.length > 0) {
-      // Handle single-line changes
-      currentLine.push(change)
+    for (const change of lineDiffs) {
+      if (change.value.includes('\n')) {
+        const lines = change.value.split('\n')
+        lines.forEach((line, i) => {
+          if (line.length > 0) {
+            currentLine.push({
+              value: line,
+              added: change.added || false,
+              removed: change.removed || false,
+              count: 1
+            })
+          }
+          if (i < lines.length - 1) {
+            finishLine()
+          }
+        })
+      } else if (change.value.length > 0) {
+        currentLine.push(change)
+      }
     }
-  }
-  
-  // Make sure to add the last line if there is one
-  finishLine()
-
-  return result
+    
+    finishLine()
+    return result
+  })
 }
 
 export const useRecipeStore = create<RecipeStore>((set, get) => ({
@@ -74,6 +70,7 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
   currentRecipe: null,
   diff: null,
   isLoading: false,
+  flashTimestamp: 0,
   loadRecipes: async (userId: string) => {
     set({ isLoading: true })
     try {
@@ -93,9 +90,13 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
   },
   openRecipe: (recipeId: string) => {
     const { recipes } = get()
-    const recipe = recipes.find(r => r.parent_id === recipeId)
-                || recipes.find(r => r.id === recipeId)
-    set({ currentRecipe: recipe || null })
+    const modified = recipes.find(r => r.parent_id === recipeId)
+    const original = recipes.find(r => r.id === recipeId)
+    
+    set({
+      currentRecipe: modified || original || null,
+      diff: modified && original ? diffRecipes(original, modified) : null
+    })
   },
   modifyRecipe: async (instruction: string) => {
     set({ isLoading: true })
@@ -113,8 +114,6 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
 
       const diff = diffRecipes(currentRecipe, newRecipe)
 
-      console.log('Recipe diff:', diff)
-
       set((state) => {
         const recipes = [...state.recipes]
         const existingIndex = recipes.findIndex(r => r.id === newRecipe.id)
@@ -128,5 +127,29 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
       console.error('Error modifying recipe:', error)
       set({ isLoading: false })
     }
+  },
+  resetRecipe: async () => {
+    const { currentRecipe, recipes } = get()
+    if (!currentRecipe || !currentRecipe.parent_id) return
+
+    const originalRecipe = recipes.find(r => r.id === currentRecipe.parent_id)
+    if (!originalRecipe)
+      return console.error('Original recipe not found')
+
+    try {
+      const recipeRef = doc(db, 'recipes', currentRecipe.id)
+      await deleteDoc(recipeRef)
+
+      set(state => ({
+        recipes: state.recipes.filter(r => r.id !== currentRecipe.id),
+        currentRecipe: originalRecipe,
+        diff: null
+      }))
+    } catch (error) {
+      console.error('Error resetting recipe:', error)
+    }
+  },
+  flashChanges: () => {
+    set({ flashTimestamp: Date.now() })
   },
 }))

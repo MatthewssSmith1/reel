@@ -1,22 +1,34 @@
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay, Easing, interpolateColor } from 'react-native-reanimated';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
+import { useRecipeStore } from '@/lib/recipeStore';
 import { Change } from 'diff';
 
+const VISIBLE_DURATION = 1500;
+const FADE_DURATION = 500;
+
 export const ChangeText = ({ change, index }: { change: Change; index: number; }) => {
+  const { flashTimestamp } = useRecipeStore();
   const highlightProgress = useSharedValue(change.added ? 1 : 0);
 
-  useEffect(() => {
-    if (change.added) {
-      highlightProgress.value = 1;
-      highlightProgress.value = withDelay(
-        1000, 
-        withTiming(0, {
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease)
-        })
-      );
-    }
+  console.log(flashTimestamp)
+
+  const flashAnimation = useCallback(() => {
+    if (!change.added) return;
+    console.log('flashAnimation')
+    
+    highlightProgress.value = 1;
+    highlightProgress.value = withDelay(
+      VISIBLE_DURATION, 
+      withTiming(0, {
+        duration: FADE_DURATION,
+        easing: Easing.inOut(Easing.ease)
+      })
+    );
   }, []);
+
+  useEffect(() => {
+    flashAnimation();
+  }, [flashAnimation, flashTimestamp]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
