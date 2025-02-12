@@ -32,10 +32,8 @@ export default function CommentsModal() {
 
   const onSubmit = async () => {
     if (!comment.trim()) return;
-    console.log('Submitting comment:', { postId, comment: comment.trim() });
     try {
       await submitComment(postId, comment.trim());
-      console.log('Comment submitted successfully');
       setComment('');
       setReplyTarget(null);
     } catch (error) {

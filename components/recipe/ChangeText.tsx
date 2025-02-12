@@ -10,11 +10,8 @@ export const ChangeText = ({ change, index }: { change: Change; index: number; }
   const { flashTimestamp } = useRecipeStore();
   const highlightProgress = useSharedValue(change.added ? 1 : 0);
 
-  console.log(flashTimestamp)
-
   const flashAnimation = useCallback(() => {
     if (!change.added) return;
-    console.log('flashAnimation')
     
     highlightProgress.value = 1;
     highlightProgress.value = withDelay(
