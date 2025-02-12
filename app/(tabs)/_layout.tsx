@@ -29,7 +29,7 @@ export default function TabLayout() {
     loadPostLikes();
     loadCommentLikes();
     loadPosts();
-    loadRecipes();
+    loadRecipes(user.uid);
     loadFollows(user.uid);
   }, [user?.uid]); 
 

@@ -165,7 +165,8 @@ async function seedDatabase() {
   const recipes = TITLES.map((title, i) => ({
     ...RECIPES[title],
     id: utils.generateId(),
-    author_id: users[i % users.length].uid
+    author_id: users[i % users.length].uid,
+    parent_id: null
   }));
 
   const posts = generatePosts(recipes);

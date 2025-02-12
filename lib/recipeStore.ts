@@ -1,4 +1,4 @@
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, query, where, or } from 'firebase/firestore'
 import { Recipe, db, Post } from '@/lib/firebase'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase'
@@ -8,7 +8,7 @@ type RecipeStore = {
   recipes: Recipe[]
   currentRecipe: Recipe | null
   isLoading: boolean
-  loadRecipes: () => Promise<void>
+  loadRecipes: (userId: string) => Promise<void>
   openRecipe: (recipeId: string) => void
   modifyRecipe: (instruction: string) => Promise<void>
 }
@@ -17,15 +17,20 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
   recipes: [],
   currentRecipe: null,
   isLoading: false,
-  loadRecipes: async () => {
+  loadRecipes: async (userId: string) => {
     set({ isLoading: true })
     try {
       const recipesRef = collection(db, 'recipes')
-      const snapshot = await getDocs(recipesRef)
+      const snapshot = await getDocs(query(recipesRef, 
+        or(
+          where('parent_id', '==', null),
+          where('author_id', '==', userId)
+        )
+      ))
       const recipes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Recipe))
       set({ recipes, isLoading: false })
     } catch (error) {
-      console.log(error)
+      console.error('Error in loadRecipes:', error)
       set({ isLoading: false })
     }
   },
