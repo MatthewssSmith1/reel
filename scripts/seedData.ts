@@ -1,11 +1,12 @@
 import { User, Post, Comment, Follow, PostLike, CommentLike, Recipe } from '@/lib/firebase';
-import { RECIPES } from './seedRecipes';
+import { TITLES, DESCRIPTIONS, RECIPES } from './data/recipes';
+import { COMMENTS } from './data/comments';
 import * as utils from './seedUtils';
 
 const MAX_LIKES_PER_POST = 6;
 const MAX_LIKES_PER_COMMENT = 4;
-const MAX_COMMENTS_PER_POST = 10;
-const COMMENT_HAS_REPLIES_PROBABILITY = 0.5;
+const MAX_COMMENTS_PER_POST = 12;
+const COMMENT_HAS_REPLIES_PROBABILITY = 0.4;
 const MAX_REPLIES_PER_COMMENT = 5;
 const MAX_FOLLOWERS_PER_USER = 5;
 
@@ -32,34 +33,16 @@ const users: User[] = [
   createUser('cynthia_amsel', '🔪 Home cook exploring flavors')
 ];
 
-const VIDEO_DESCRIPTIONS = [
-  "Smashed beef patty with caramelized onions, aged cheddar & secret sauce on brioche, served with crispy fries",
-  "San Marzano tomatoes simmered with garlic, basil & olive oil for 2hrs until rich and velvety",
-  "Cherry tomatoes blistered in cast iron with garlic, thyme & flaky salt, finished with aged balsamic",
-  "Steamed edamame pods tossed in Maldon salt, togarashi & sesame oil, served with charred lemon",
-  "Classic spaghetti cacio e pepe with fresh pecorino, cracked black pepper & pasta water emulsion",
-  "Handmade orecchiette with broccoli, Italian sausage, chili flakes & toasted breadcrumbs",
-  "Fluffy Japanese soufflé pancakes with maple butter, fresh berries & whipped mascarpone cream",
-  "Ancient grain quinoa bowl with roasted vegetables, crispy chickpeas & lemon-tahini dressing",
-  "72-hour cold-fermented pizza dough with 00 flour, yielding perfect leopard-spotted crust",
-  "Charred broccoli florets with garlic confit, chili flakes & lemon zest, finished with aged parmesan",
-  "Artisanal sourdough toast topped with whipped honey-peanut butter, caramelized bananas & Maldon salt",
-  "Silky fettuccine alfredo with 24-month aged parmigiano, fresh cream & nutmeg, garnished with chives",
-  "Triple-layer chocolate cake with Valrhona ganache, salted caramel & fresh raspberry compote",
-  "Fresh guacamole with hand-crushed Hass avocados, lime, cilantro & serrano chilies, topped with pomegranate seeds",
-  "Wild mushroom soup with shiitake, porcini & cremini blend, finished with truffle oil & fresh thyme"
-];
-
 function generatePosts(recipes: Recipe[]): Post[] {
   const posts: Post[] = [];
   
-  VIDEO_DESCRIPTIONS.forEach((description, i) => {
+  TITLES.forEach((title, i) => {
     const author = users[i % users.length];
     posts.push({
       id: utils.generateId(),
       author_id: author.uid,
-      video_id: i.toString(),
-      description,
+      video_id: title,
+      description: DESCRIPTIONS[title],
       recipe_id: recipes[i].id,
       created_at: utils.randomTimestamp(i, i + 3),
       likes_count: 0,
@@ -70,32 +53,6 @@ function generatePosts(recipes: Recipe[]): Post[] {
   
   return posts;
 }
-
-const COMMENTS = [
-  "This looks absolutely delicious! 🤤",
-  "The plating is gorgeous 👨‍🍳",
-  "How did you get that perfect sear?! 🔥",
-  "Making this for dinner tonight 💯",
-  "Your knife skills are insane",
-  "That sauce looks incredible ✨",
-  "Pro chef vibes right here 👌",
-  "Keep the recipes coming! 🍳",
-  "Those colors are making me hungry 😍",
-  "What heat setting did you use? 🔪",
-  "This is food art at its finest ⭐",
-  "My stomach is growling rn 🍽️",
-  "Can't wait to try this out! 🍴",
-  "Weekend meal prep inspiration 📝",
-  "Need that recipe ASAP 🙏",
-  "The texture looks perfect 👩‍🍳",
-  "Love the fresh ingredients 🌿",
-  "That seasoning blend though 🧂",
-  "Master class in presentation 🎯",
-  "Could smell this through the screen 🍴",
-  "Gordon Ramsay would approve 🔥",
-  "Would you like some more? 🤔",
-  "This is my go-to recipe for the week 🍽️",
-];
 
 function generateComments(posts: Post[]): Comment[] {
   const comments: Comment[] = [];
@@ -203,59 +160,56 @@ function generateLikes<T extends { likes_count: number }>(
 }
 
 async function seedDatabase() {
-  try {
-    const recipes = RECIPES.map((recipe, i) => ({
-      ...recipe,
-      id: utils.generateId(),
-      author_id: users[i % users.length].uid
-    }));
+  console.log('Seeding database...');
 
-    const posts = generatePosts(recipes);
-    let comments = generateComments(posts);
-    comments = [...comments, ...generateReplies(posts, comments)];
-    
-    const postLikes = generateLikes(
-      posts, 
-      users, 
-      MAX_LIKES_PER_POST,
-      (post, user) => ({
-        id: `${user.uid}_${post.id}`,
-        user_id: user.uid,
-        post_id: post.id,
-        created_at: utils.randomTimestamp(0, 7)
-      })
-    );
-    
-    const commentLikes = generateLikes(
-      comments,
-      users,
-      MAX_LIKES_PER_COMMENT,
-      (comment, user) => ({
-        id: `${user.uid}_${comment.id}`,
-        user_id: user.uid,
-        comment_id: comment.id,
-        created_at: utils.randomTimestamp(0, 7)
-      })
-    );
+  const recipes = TITLES.map((title, i) => ({
+    ...RECIPES[title],
+    id: utils.generateId(),
+    author_id: users[i % users.length].uid
+  }));
 
-    const follows = generateFollows(users);
+  const posts = generatePosts(recipes);
+  let comments = generateComments(posts);
+  comments = [...comments, ...generateReplies(posts, comments)];
+  
+  const postLikes = generateLikes(
+    posts, 
+    users, 
+    MAX_LIKES_PER_POST,
+    (post, user) => ({
+      id: `${user.uid}_${post.id}`,
+      user_id: user.uid,
+      post_id: post.id,
+      created_at: utils.randomTimestamp(0, 7)
+    })
+  );
+  
+  const commentLikes = generateLikes(
+    comments,
+    users,
+    MAX_LIKES_PER_COMMENT,
+    (comment, user) => ({
+      id: `${user.uid}_${comment.id}`,
+      user_id: user.uid,
+      comment_id: comment.id,
+      created_at: utils.randomTimestamp(0, 7)
+    })
+  );
 
-    await Promise.all([
-      utils.seedCollection('users', users),
-      utils.seedCollection('recipes', recipes),
-      utils.seedCollection('posts', posts),
-      utils.seedCollection('comments', comments),
-      utils.seedCollection('post_likes', postLikes as PostLike[]),
-      utils.seedCollection('comment_likes', commentLikes as CommentLike[]),
-      utils.seedCollection('follows', follows)
-    ]);
+  const follows = generateFollows(users);
 
-    console.log('Seeding completed successfully');
-    process.exit(0);
-  } catch (error) {
-    console.error('Error seeding database:', error);
-    process.exit(1);
-  }
+  await Promise.all([
+    utils.seedCollection('users', users),
+    utils.seedCollection('recipes', recipes),
+    utils.seedCollection('posts', posts),
+    utils.seedCollection('comments', comments),
+    utils.seedCollection('post_likes', postLikes as PostLike[]),
+    utils.seedCollection('comment_likes', commentLikes as CommentLike[]),
+    utils.seedCollection('follows', follows)
+  ]);
+
+  console.log('Seeding completed successfully');
+  process.exit(0);
 }
 
 seedDatabase();
