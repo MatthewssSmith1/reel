@@ -13,14 +13,14 @@ import { useUserStore } from '@/lib/userStore';
 import { ThemedText } from './ThemedText';
 import { router } from 'expo-router';
 
-type VideoViewProps = {
+type Props = {
   post: Post;
   shouldPlay: boolean;
   hideProfileButton?: boolean;
   setVideoRef: (ref: Video | null) => void;
 };
 
-export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = false }: VideoViewProps) {
+export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = false }: Props) {
   const thumbnailUri = useThumbnail(post); 
 
   const [videoUri, setVideoUri] = useState<string | null>(null);
@@ -134,7 +134,7 @@ export function VideoView({ post, shouldPlay, setVideoRef, hideProfileButton = f
         />
         <ToolbarButton
           name="restaurant"
-          onPress={() => router.push({ pathname: '/(modals)/recipe', params: { postId: post.id } })}
+          onPress={() => router.push({ pathname: '/(modals)/recipe' })}
         />
       </View>
     </View>

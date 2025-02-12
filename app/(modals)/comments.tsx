@@ -38,7 +38,6 @@ export default function CommentsModal() {
       console.log('Comment submitted successfully');
       setComment('');
       setReplyTarget(null);
-      Keyboard.dismiss();
     } catch (error) {
       console.error('Failed to submit comment:', error);
     }

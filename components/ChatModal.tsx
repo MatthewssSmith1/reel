@@ -16,6 +16,7 @@ type ChatModalProps = {
   leftButton?: ReactNode;
   iconName?: keyof typeof Ionicons.glyphMap;
   paddingTop?: number;
+  disabled?: boolean;
 };
 
 export const ChatModal = forwardRef<TextInput, ChatModalProps>(({ 
@@ -26,7 +27,8 @@ export const ChatModal = forwardRef<TextInput, ChatModalProps>(({
   placeholder = "Write a message...",
   leftButton,
   iconName = "paper-plane",
-  paddingTop = 0
+  paddingTop = 0,
+  disabled = false,
 }, ref) => {
   const isKeyboardVisible = useKeyboardVisibility();
   const { bottom } = useSafeAreaInsets();
@@ -40,6 +42,11 @@ export const ChatModal = forwardRef<TextInput, ChatModalProps>(({
       <Ionicons name="chevron-down" color="white" size={ICON_SIZE} />
     </TouchableOpacity>
   );
+
+  const handleSubmit = () => {
+    onSubmit();
+    Keyboard.dismiss();
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -59,12 +66,14 @@ export const ChatModal = forwardRef<TextInput, ChatModalProps>(({
             placeholderTextColor="#666"
             value={value}
             onChangeText={onChangeText}
-            onSubmitEditing={onSubmit}
+            onSubmitEditing={handleSubmit}
+            editable={!disabled}
             multiline
           />
           <TouchableOpacity 
             style={styles.button} 
-            onPress={onSubmit}
+            onPress={handleSubmit}
+            disabled={disabled}
           >
             <Ionicons name={iconName} color="white" size={ICON_SIZE} />
           </TouchableOpacity>
