@@ -3,67 +3,37 @@ import { useEffect, useCallback } from 'react';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { StyleSheet, View } from 'react-native';
 import { useRecipeStore } from '@/lib/recipeStore';
-import { Ionicons } from '@expo/vector-icons';
+import { ChangeText } from '@/components/recipe/ChangeText';
+import { Change } from 'diff';
 
-export const ANIM_DURATION = 3000;
-export const ANIM_DELAY = 100;
+export const BREATHE_ANIM_DURATION = 3000;
+const BREATHE_ANIM_GAP = 100;
 
 type Props = {
-  title: string;
-  items: string[];
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  ordered?: boolean;
-  animOffset?: number;
-}
-
-export const RecipeList = ({ title, items, icon, ordered = false, animOffset = 0 }: Props) => {
-  return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Ionicons name={icon} size={20} color="#fff" />
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-      <View style={styles.list}>
-        {items.map((item, index) => (
-          <Item
-            key={index}
-            item={item}
-            index={index}
-            ordered={ordered}
-            animOffset={animOffset}
-          />
-        ))}
-      </View>
-    </View>
-  );
-};
-
-type ItemProps = {
-  item: string;
+  item: Change[];
   index: number;
   ordered: boolean;
   animOffset: number;
 }
 
-const Item = ({ item, index, ordered, animOffset }: ItemProps) => {
+export const RecipeListItem = ({ item, index, ordered, animOffset }: Props) => {
   const { isLoading } = useRecipeStore();
-
   const animatedProgress = useSharedValue(0);
 
   useEffect(() => {
     if (isLoading) {
-      const startDelay = (index + animOffset) * ANIM_DELAY;
+      const startDelay = (index + animOffset) * BREATHE_ANIM_GAP;
 
       animatedProgress.value = withDelay(
         startDelay,
         withRepeat(
           withSequence(
             withTiming(1, {
-              duration: ANIM_DURATION,
+              duration: BREATHE_ANIM_DURATION,
               easing: Easing.inOut(Easing.ease)
             }),
             withTiming(0, {
-              duration: ANIM_DURATION,
+              duration: BREATHE_ANIM_DURATION,
               easing: Easing.inOut(Easing.ease)
             })
           ),
@@ -121,30 +91,14 @@ const Item = ({ item, index, ordered, animOffset }: ItemProps) => {
           {ordered ? `${index + 1}.` : '•'}
         </Animated.Text>
       </View>
-      <Text style={styles.itemText}>{item}</Text>
+      <Text style={styles.itemText}>
+        {item.map((change, index) => <ChangeText key={index} change={change} index={index} />)}
+      </Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-    gap: 14,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  list: {
-    gap: 12,
-    width: '100%',
-  },
   item: {
     flexDirection: 'row',
     gap: 14,
@@ -154,7 +108,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   itemText: {
-    paddingRight: 8,
+    color: '#fff',
+    flex: 1,
   },
   itemBackground: {
     position: 'absolute',

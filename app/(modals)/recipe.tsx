@@ -1,16 +1,16 @@
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing, interpolate } from 'react-native-reanimated';
 import { StyleSheet, ScrollView, TextInput, View} from 'react-native';
-import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
-import { RecipeList, ANIM_DURATION } from '@/components/RecipeList';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRef, useState, useMemo } from 'react';
+import { RecipeLoadingIndicator } from '@/components/recipe/RecipeLoadingIndicator';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRecipeStore } from '@/lib/recipeStore';
+import { RecipeList } from '@/components/recipe/RecipeList';
 import { ChatModal } from '@/components/ChatModal';
-import { Badge } from '@/components/Badge';
+import { Change } from 'diff';
+import { Badge } from '@/components/recipe/Badge';
 
 export default function RecipeModal() {
-  const { currentRecipe, modifyRecipe, isLoading } = useRecipeStore();
+  const { currentRecipe, modifyRecipe, isLoading, diff } = useRecipeStore();
   const [instruction, setInstruction] = useState('');
   const { bottom } = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
@@ -29,8 +29,28 @@ export default function RecipeModal() {
     </View>
   );
 
+  const convertToChangeArray = (items: string[]): Change[][] => items.map(item => [{
+    added: false,
+    removed: false,
+    count: 1,
+    value: item
+  }])
+
   const ingredientCount = currentRecipe.ingredients.length;
   const stepCount = currentRecipe.steps.length;
+  const equipmentCount = currentRecipe.equipment.length;
+
+  const ingredientChanges = diff 
+    ? diff.slice(0, ingredientCount)
+    : convertToChangeArray(currentRecipe.ingredients);
+
+  const stepChanges = diff
+    ? diff.slice(ingredientCount, ingredientCount + stepCount)
+    : convertToChangeArray(currentRecipe.steps);
+
+  const equipmentChanges = diff
+    ? diff.slice(ingredientCount + stepCount, ingredientCount + stepCount + equipmentCount)
+    : convertToChangeArray(currentRecipe.equipment);
 
   return (
     <ChatModal
@@ -42,7 +62,7 @@ export default function RecipeModal() {
       iconName="color-wand"
       disabled={isLoading}
       submitDisabled={instructionLength === 0}
-      aboveTextInput={isLoading && <LoadingIndicator />}
+      aboveTextInput={isLoading && <RecipeLoadingIndicator />}
     >
       <ScrollView 
         style={[styles.container, { backgroundColor: 'transparent' }]}
@@ -62,60 +82,13 @@ export default function RecipeModal() {
           </View>
         </View>
 
-        <RecipeList title="Ingredients" icon="leaf" items={currentRecipe.ingredients} />
-        <RecipeList title="Steps" icon="document-text" items={currentRecipe.steps} animOffset={ingredientCount} ordered />
-        <RecipeList title="Equipment" icon="cube" items={currentRecipe.equipment} animOffset={ingredientCount + stepCount} />
+        <RecipeList title="Ingredients" icon="leaf" items={ingredientChanges} />
+        <RecipeList title="Steps" icon="document-text" items={stepChanges} animOffset={ingredientCount} ordered />
+        <RecipeList title="Equipment" icon="cube" items={equipmentChanges} animOffset={ingredientCount + stepCount} />
       </ScrollView>
     </ChatModal>
   );
 }
-
-const LoadingIndicator = () => {
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    progress.value = withRepeat(
-      withSequence(
-        withTiming(1, {
-          duration: ANIM_DURATION,
-          easing: Easing.inOut(Easing.ease)
-        }),
-        withTiming(0, {
-          duration: ANIM_DURATION,
-          easing: Easing.inOut(Easing.ease)
-        })
-      ),
-      -1,
-      false
-    );
-
-    return () => {
-      progress.value = 0;
-    };
-  }, []);
-
-  const createAnimatedStyle = useCallback(() =>
-    useAnimatedStyle(() => ({
-      opacity: interpolate(
-        progress.value,
-        [0, 0.5, 1],
-        [1, 0.25, 1]
-      )
-    })), []);
-
-  const animatedStyle = createAnimatedStyle();
-
-  return (
-    <View style={styles.loadingIndicator}>
-      <Animated.View style={animatedStyle}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={styles.loadingText}>Thinking...</Text>
-          <MaterialCommunityIcons name="brain" size={24} color="#555" />
-        </View>
-      </Animated.View>
-    </View>
-  );
-};
 
 const styles = StyleSheet.create({
   container: {
@@ -136,19 +109,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  loadingIndicator: {
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 50,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginBottom: 12,
-  },
-  loadingText: {
-    color: '#555',
   },
 });
