@@ -1,11 +1,18 @@
-import { StyleSheet, View, Modal, TouchableOpacity, Pressable } from 'react-native';
+import { StyleSheet, View, Modal, TouchableOpacity, Pressable, Switch } from 'react-native';
 import { ThemedText as Text } from '@/components/ThemedText';
 import React, { useState } from 'react';
 import { useRecipeStore } from '@/lib/recipeStore';
 import { Ionicons } from '@expo/vector-icons';
 
 export function RecipeActionMenu() {
-  const { currentRecipe, resetRecipe, flashChanges } = useRecipeStore();
+  const { 
+    currentRecipe, 
+    resetRecipe, 
+    showRemovedText, 
+    setShowRemovedText,
+    showDiff,
+    setShowDiff,
+  } = useRecipeStore();
   const [menuVisible, setMenuVisible] = useState(false);
 
   if (!currentRecipe?.parent_id) return null;
@@ -30,19 +37,30 @@ export function RecipeActionMenu() {
           onPress={() => setMenuVisible(false)}
         >
           <View style={styles.menuContainer}>
+            <View style={styles.switchContainer}>
+              <Text style={styles.menuText}>Highlight Changes</Text>
+              <Switch
+                value={showDiff}
+                onValueChange={setShowDiff}
+                trackColor={{ false: '#666', true: '#4CAF50' }}
+                thumbColor="#fff"
+              />
+            </View>
+            <View style={styles.switchContainer}>
+              <Text style={styles.menuText}>Show Removed Text</Text>
+              <Switch
+                value={showRemovedText}
+                onValueChange={setShowRemovedText}
+                trackColor={{ false: '#666', true: '#4CAF50' }}
+                thumbColor="#fff"
+                disabled={!showDiff}
+              />
+            </View>
             <ActionButton
               icon="refresh"
               label="Reset to Original"
               onPress={() => {
                 resetRecipe();
-                setMenuVisible(false);
-              }}
-            />
-            <ActionButton
-              icon="flash"
-              label="Show Changes"
-              onPress={() => {
-                flashChanges();
                 setMenuVisible(false);
               }}
             />
@@ -90,6 +108,7 @@ const styles = StyleSheet.create({
     padding: 8,
     width: '80%',
     maxWidth: 300,
+    gap: 4,
   },
   menuItem: {
     flexDirection: 'row',
@@ -97,6 +116,7 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 16,
     borderRadius: 8,
+    backgroundColor: '#333',
   },
   menuItemPressed: {
     backgroundColor: '#444',
@@ -104,5 +124,13 @@ const styles = StyleSheet.create({
   menuText: {
     color: '#fff',
     fontSize: 16,
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
 }); 

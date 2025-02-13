@@ -1,7 +1,7 @@
 import { collection, getDocs, query, where, or, doc, deleteDoc } from 'firebase/firestore'
-import { diffLines, diffWords, Change } from 'diff'
 import { Recipe, db, functions } from '@/lib/firebase'
 import { httpsCallable } from 'firebase/functions'
+import Diff, { Change } from 'diff'
 import { create } from 'zustand'
 
 type RecipeStore = {
@@ -9,13 +9,48 @@ type RecipeStore = {
   currentRecipe: Recipe | null
   diff: Change[][][] | null 
   isLoading: boolean
-  flashTimestamp: number
+  showRemovedText: boolean
+  showDiff: boolean
   loadRecipes: (userId: string) => Promise<void>
   openRecipe: (recipeId: string) => void
   modifyRecipe: (instruction: string) => Promise<void>
   resetRecipe: () => void
-  flashChanges: () => void
+  setShowRemovedText: (show: boolean) => void
+  setShowDiff: (show: boolean) => void
 }
+
+function diffLines(a: string[], b: string[]): Change[][] {
+    const result: Change[][] = []
+    let currentLine: Change[] = []
+
+    const finishLine = () => {
+      if (currentLine.length > 0) {
+        result.push(currentLine)
+        currentLine = []
+      }
+    }
+
+    const tokenize = (lines: string[]) => lines.join('\n').match(/(\d+[./]\d+|\n|\w+|.) ?/g) || []
+
+    for (const change of Diff.diffArrays(tokenize(a), tokenize(b))) {
+      for (const token of change.value) {
+        if (token === '\n') {
+          finishLine()
+          continue
+        }
+
+        currentLine.push({
+          value: token,
+          added: change.added || false,
+          removed: change.removed || false,
+          count: 1
+        })
+      }
+    }
+
+    finishLine()
+    return result
+  }
 
 function diffRecipes(recipeA: Recipe, recipeB: Recipe): Change[][][] {
   const sections = [
@@ -24,45 +59,7 @@ function diffRecipes(recipeA: Recipe, recipeB: Recipe): Change[][][] {
     { a: recipeA.equipment, b: recipeB.equipment }
   ]
 
-  return sections.map(({ a, b }) => {
-    const lineDiffs = diffWords(a.join('\n'), b.join('\n'))
-    const result: Change[][] = []
-    let currentLine: Change[] = []
-
-    const finishLine = () => {
-      if (currentLine.length > 0) {
-        const filteredLine = currentLine.filter(change => !change.removed)
-        if (filteredLine.length > 0) {
-          result.push(filteredLine)
-        }
-        currentLine = []
-      }
-    }
-
-    for (const change of lineDiffs) {
-      if (change.value.includes('\n')) {
-        const lines = change.value.split('\n')
-        lines.forEach((line, i) => {
-          if (line.length > 0) {
-            currentLine.push({
-              value: line,
-              added: change.added || false,
-              removed: change.removed || false,
-              count: 1
-            })
-          }
-          if (i < lines.length - 1) {
-            finishLine()
-          }
-        })
-      } else if (change.value.length > 0) {
-        currentLine.push(change)
-      }
-    }
-    
-    finishLine()
-    return result
-  })
+  return sections.map(({ a, b }) => diffLines(a, b))
 }
 
 export const useRecipeStore = create<RecipeStore>((set, get) => ({
@@ -70,7 +67,8 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
   currentRecipe: null,
   diff: null,
   isLoading: false,
-  flashTimestamp: 0,
+  showRemovedText: true,
+  showDiff: true,
   loadRecipes: async (userId: string) => {
     set({ isLoading: true })
     try {
@@ -121,7 +119,12 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
         if (existingIndex !== -1) recipes[existingIndex] = newRecipe
         else recipes.push(newRecipe)
         
-        return { recipes, currentRecipe: newRecipe, diff, isLoading: false }
+        return { 
+          recipes, 
+          currentRecipe: newRecipe, 
+          diff,
+          isLoading: false
+        }
       })
     } catch (error) {
       console.error('Error modifying recipe:', error)
@@ -149,7 +152,10 @@ export const useRecipeStore = create<RecipeStore>((set, get) => ({
       console.error('Error resetting recipe:', error)
     }
   },
-  flashChanges: () => {
-    set({ flashTimestamp: Date.now() })
+  setShowRemovedText: (show: boolean) => {
+    set({ showRemovedText: show })
   },
+  setShowDiff: (show: boolean) => {
+    set({ showDiff: show })
+  }
 }))

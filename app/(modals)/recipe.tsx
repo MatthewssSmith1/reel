@@ -10,8 +10,11 @@ import { ChatModal } from '@/components/ChatModal';
 import { Change } from 'diff';
 import { Badge } from '@/components/recipe/Badge';
 
+const SECTIONS = ['ingredients', 'steps', 'equipment'] as const
+const SECTION_ICONS = ['leaf', 'document-text', 'cube'] as const
+
 export default function RecipeModal() {
-  const { currentRecipe, modifyRecipe, isLoading, diff, resetRecipe } = useRecipeStore();
+  const { currentRecipe, modifyRecipe, isLoading, diff, showRemovedText, showDiff } = useRecipeStore();
   const [instruction, setInstruction] = useState('');
   const { bottom } = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
@@ -20,43 +23,36 @@ export default function RecipeModal() {
 
   const onSubmit = async () => {
     if (!currentRecipe || instructionLength === 0) return;
-    modifyRecipe(instruction.trim());
     setInstruction('');
+    modifyRecipe(instruction.trim());
   };
+
+  const sectionChanges = useMemo(() => {
+    if (!currentRecipe) return [];
+
+    function convertToChangeArray(items: string[]): Change[][] {
+      return items.map(item => [{
+        added: false,
+        removed: false,
+        count: 1,
+        value: item
+      }]);
+    }
+
+    const sectionChanges = diff || SECTIONS.map(section => convertToChangeArray(currentRecipe[section]))
+
+    if (showDiff && showRemovedText) return sectionChanges;
+    
+    return sectionChanges.map(itemList => 
+      itemList.filter(item => item.some(change => !change.removed))
+    );
+  }, [diff, showRemovedText, currentRecipe, showDiff]);
 
   if (!currentRecipe) return (
     <View style={styles.container}>
       <Text>Recipe not found</Text>
     </View>
   );
-
-  const convertToChangeArray = (items: string[]): Change[][] => items.map(item => [{
-    added: false,
-    removed: false,
-    count: 1,
-    value: item
-  }])
-
-  const sections = [
-    { 
-      items: currentRecipe.ingredients,
-      title: "Ingredients",
-      icon: "leaf" as const
-    },
-    { 
-      items: currentRecipe.steps,
-      title: "Steps",
-      icon: "document-text" as const,
-      ordered: true
-    },
-    { 
-      items: currentRecipe.equipment,
-      title: "Equipment",
-      icon: "cube" as const
-    }
-  ]
-
-  const changes = diff || sections.map(section => convertToChangeArray(section.items))
 
   return (
     <ChatModal
@@ -88,14 +84,14 @@ export default function RecipeModal() {
           </View>
         </View>
 
-        {sections.map((section, i) => (
+        {SECTIONS.map((section, idx) => (
           <RecipeList
-            key={section.title}
-            title={section.title}
-            icon={section.icon}
-            items={changes[i]}
-            ordered={section.ordered}
-            animOffset={sections.slice(0, i).reduce((sum, s) => sum + s.items.length, 0)}
+            key={idx}
+            title={section}
+            icon={SECTION_ICONS[idx]}
+            items={sectionChanges[idx]}
+            ordered={section === 'steps'}
+            animOffset={sectionChanges.slice(0, idx).reduce((sum, s) => sum + s.length, 0)}
           />
         ))}
       </ScrollView>

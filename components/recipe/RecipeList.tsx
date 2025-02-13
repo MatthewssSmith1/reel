@@ -22,7 +22,7 @@ export const RecipeList = ({ title, items, icon, ordered = false, animOffset = 0
       <View style={styles.list}>
         {items.map((item, index) => (
           <RecipeListItem
-            key={index}
+            key={index + item.map(i => i.value[0]).join('')}
             item={item}
             index={index}
             ordered={ordered}
@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
+    textTransform: 'capitalize',
   },
   list: {
     gap: 12,

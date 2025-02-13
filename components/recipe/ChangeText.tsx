@@ -1,47 +1,36 @@
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, withDelay, Easing, interpolateColor } from 'react-native-reanimated';
-import { useCallback, useEffect } from 'react';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useRecipeStore } from '@/lib/recipeStore';
 import { Change } from 'diff';
 
-const VISIBLE_DURATION = 1500;
-const FADE_DURATION = 500;
+const ANIM_DURATION = 100;
 
-export const ChangeText = ({ change, index }: { change: Change; index: number; }) => {
-  const { flashTimestamp } = useRecipeStore();
-  const highlightProgress = useSharedValue(change.added ? 1 : 0);
+export const ChangeText = ({ change }: { change: Change; }) => {
+  const { showRemovedText, showDiff } = useRecipeStore();
 
-  const flashAnimation = useCallback(() => {
-    if (!change.added) return;
-    
-    highlightProgress.value = 1;
-    highlightProgress.value = withDelay(
-      VISIBLE_DURATION, 
-      withTiming(0, {
-        duration: FADE_DURATION,
-        easing: Easing.inOut(Easing.ease)
-      })
-    );
-  }, []);
+  const animatedStyles = useAnimatedStyle(() => {
+    const backgroundColor = (() => {
+      if (!showDiff) return 'transparent';
+      if (change.added) return showRemovedText ? '#4db344' : '#fff';
+      if (change.removed) return '#eb4646';
+      return 'transparent';
+    })();
 
-  useEffect(() => {
-    flashAnimation();
-  }, [flashAnimation, flashTimestamp]);
+    const color = (() => {
+      if (!showDiff) return '#fff';
+      if (change.added && !showRemovedText) return '#000';
+      return '#fff';
+    })();
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      highlightProgress.value,
-      [0, 1],
-      ['transparent', '#999']
-    ),
-    color: interpolateColor(
-      highlightProgress.value,
-      [0, 1],
-      ['#fff', '#000']
-    ),
-  }));
+    return {
+      backgroundColor: withTiming(backgroundColor, { duration: ANIM_DURATION }),
+      color: withTiming(color, { duration: ANIM_DURATION }),
+    };
+  }, [showRemovedText, showDiff]);
+
+  if (change.removed && !(showDiff && showRemovedText)) return null;
 
   return (
-    <Animated.Text key={index} style={[change.added && animatedStyle]}>
+    <Animated.Text style={animatedStyles}>
       {change.value}
     </Animated.Text>
   );

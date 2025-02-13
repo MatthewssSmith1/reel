@@ -56,7 +56,7 @@ export const RecipeListItem = ({ item, index, ordered, animOffset }: Props) => {
     opacity: interpolate(
       animatedProgress.value,
       KEYFRAMES,
-      [0, 0.05, 0]
+      [0, 0.15, 0]
     )
   })), []);
 
@@ -132,6 +132,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   unorderedPrefix: {
-    transform: [{ scale: 1.75 }]
+    fontSize: 20,
+    transform: [{ translateY: -1 }]
   }
 });
