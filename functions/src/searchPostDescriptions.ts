@@ -3,21 +3,15 @@ import * as admin from "firebase-admin";
 import { onCall} from "firebase-functions/v2/https";
 import { z } from "zod";
 
-const searchQuerySchema = z.object({
+const schema = z.object({
   query: z.string().min(1),
 });
 
-type SearchQuery = z.infer<typeof searchQuerySchema>;
+type SearchQuery = z.infer<typeof schema>;
 
-const searchPosts = onCall<SearchQuery>(async (request) => {
+const searchPostDescriptions = onCall<SearchQuery>(async (request) => {
   try {
-    const result = searchQuerySchema.safeParse(request.data);
-    
-    if (!result.success) {
-      throw new Error(`Invalid input: ${result.error.message}`);
-    }
-
-    const { query } = result.data;
+    const { query } = schema.parse(request.data);
     const searchQuery = query.toLowerCase();
     
     const db = admin.firestore();
@@ -40,4 +34,4 @@ const searchPosts = onCall<SearchQuery>(async (request) => {
   }
 });
 
-export default searchPosts;
+export default searchPostDescriptions;

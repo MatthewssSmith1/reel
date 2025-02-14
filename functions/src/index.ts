@@ -1,7 +1,8 @@
+import searchPostDescriptions from './searchPostDescriptions';
+import searchPostsByPhoto from './searchPostsByPhoto';
 import modifyRecipe from './modifyRecipe';
-import searchPosts from './searchPosts';
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
 
-export { searchPosts, modifyRecipe };
+export { searchPostDescriptions, searchPostsByPhoto, modifyRecipe };

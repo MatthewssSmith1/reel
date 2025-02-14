@@ -92,7 +92,7 @@ export const RecipeListItem = ({ item, index, ordered, animOffset }: Props) => {
         </Animated.Text>
       </View>
       <Text style={styles.itemText}>
-        {item.map((change, index) => <ChangeText key={index} change={change} index={index} />)}
+        {item.map((change, index) => <ChangeText key={index} change={change} />)}
       </Text>
     </View>
   );
