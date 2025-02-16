@@ -67,6 +67,8 @@ export const RecipeListItem = ({ item, index, ordered, animOffset }: Props) => {
         KEYFRAMES,
         ordered ? [0.95, 1.05, 0.95] : [1.4, 1.75, 1.4]
       )
+    }, {
+      translateY: ordered ? 0 : -2
     }],
     color: interpolateColor(
       animatedProgress.value,

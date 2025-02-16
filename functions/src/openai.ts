@@ -4,7 +4,7 @@ const openaiKey = process.env.OPENAI_API_KEY!
 
 export const llm = new ChatOpenAI({ 
   apiKey: openaiKey, 
-  model: "gpt-4o-mini"
+  model: "gpt-4o"
 });
 
 export const embeddings = new OpenAIEmbeddings({ 

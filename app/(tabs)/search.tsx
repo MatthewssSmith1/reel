@@ -1,82 +1,36 @@
-import { StyleSheet, TextInput, Keyboard, ActivityIndicator, Modal, TouchableOpacity, View } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { StyleSheet, TextInput, ActivityIndicator, Modal, TouchableOpacity, View, Text } from 'react-native';
 import { useState, useCallback, useMemo } from 'react';
+import { useCameraPermissions } from 'expo-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSearchStore } from '@/lib/searchStore';
 import { ThumbnailGrid } from '@/components/ThumbnailGrid';
-import { httpsCallable } from 'firebase/functions';
-import * as ImagePicker from 'expo-image-picker';
+import IngredientsModal from '@/components/IngredientsModal';
 import { usePostStore } from '@/lib/postStore';
 import { ThemedView } from '@/components/ThemedView';
-import { functions } from '@/lib/firebase';
 import { Ionicons } from '@expo/vector-icons';
+import CameraModal from '@/components/CameraModal';
 import { router } from 'expo-router';
-import { create } from 'zustand';
 import debounce from 'lodash/debounce';
-
-type SearchStore = {
-  isLoading: boolean;
-  searchText: string;
-  matchingIds: string[];
-  isCameraOpen: boolean;
-  setSearchText: (text: string) => void;
-  handleTextSearch: () => Promise<void>;
-  handlePhotoSearch: (base64Image: string) => Promise<void>;
-  setIsCameraOpen: (isOpen: boolean) => void;
-}
-
-const useSearchStore = create<SearchStore>((set, get) => ({
-  isLoading: false,
-  searchText: '',
-  matchingIds: [],
-  isCameraOpen: false,
-  setSearchText: (text: string) => set({ searchText: text }),
-  setIsCameraOpen: (isOpen: boolean) => set({ isCameraOpen: isOpen }),
-  handleTextSearch: async () => {
-    const { searchText } = get();
-    if (!searchText.trim()) {
-      set({ matchingIds: [] });
-      return;
-    }
-
-    set({ isLoading: true });
-    try {
-      const searchPostDescriptions = httpsCallable(functions, 'searchPostDescriptions');
-      const result = await searchPostDescriptions({ query: searchText });
-      const { postIds } = result.data as { postIds: string[] };
-      set({ matchingIds: postIds });
-    } catch (error) {
-      console.error('Text search failed:', error);
-      set({ matchingIds: [] });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-  handlePhotoSearch: async (base64Image: string) => {
-    set({ searchText: '', isLoading: true });
-    
-    try {
-      const searchPostsByPhoto = httpsCallable(functions, 'searchPostsByPhoto');
-      const result = await searchPostsByPhoto({ photo: base64Image });
-      const { postIds } = result.data as { postIds: string[] };
-      set({ matchingIds: postIds });
-    } catch (error) {
-      console.error('Photo search failed:', error);
-      set({ matchingIds: [] });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-}));
+import { Post } from '@/lib/firebase'
 
 export default function SearchPage() {
-  const { isLoading, searchText, matchingIds, setSearchText, handleTextSearch, setIsCameraOpen } = useSearchStore();
+  const { isLoading, searchText, matchingIds, matchScores, setSearchText, handleTextSearch, ingredients, setIngredients } = useSearchStore();
   const [permission, requestPermission] = useCameraPermissions();
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const { posts } = usePostStore();
   const { top } = useSafeAreaInsets();
 
-  const displayedPosts = useMemo(() => matchingIds.length === 0
-      ? posts : posts.filter(post => matchingIds.includes(post.id)),
-    [matchingIds, posts]
+  const displayedPosts = useMemo(
+    () => {
+      if (ingredients !== null) return [];
+
+      if (searchText.trim().length > 0 && matchingIds.length === 0) return [];
+
+      if (matchingIds.length === 0) return [];
+
+      return matchingIds.map(id => posts.find(p => p.id === id)).filter(Boolean) as Post[]
+    },
+    [matchingIds, posts, ingredients, searchText]
   );
 
   const openCamera = async () => {
@@ -108,6 +62,9 @@ export default function SearchPage() {
             debouncedTextSearch();
           }}
         />
+        <TouchableOpacity style={styles.cameraButton} onPress={() => setIngredients([''])}>
+          <Ionicons name="leaf" size={24} color="#fff" />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.cameraButton} onPress={openCamera}>
           <Ionicons name="camera" size={24} color="#fff" />
         </TouchableOpacity>
@@ -118,83 +75,18 @@ export default function SearchPage() {
       ) : (
         <ThumbnailGrid
           posts={displayedPosts}
-          onScroll={() => Keyboard.dismiss()}
           onPostPress={onPostPress}
+          scores={matchScores.length > 0 ? matchScores : undefined}
         />
       )}
 
-      <CameraModal />
+      <CameraModal isCameraOpen={isCameraOpen} setIsCameraOpen={setIsCameraOpen} />
+      <IngredientsModal />
     </ThemedView>
   );
 }
 
-function CameraModal() {
-  const { handlePhotoSearch, isCameraOpen, setIsCameraOpen } = useSearchStore();
-  const [cameraRef, setCameraRef] = useState<CameraView | null>(null);
-  const { top } = useSafeAreaInsets();
 
-  const takePhoto = async () => {
-    if (!cameraRef) return;
-
-    try {
-      const photo = await cameraRef?.takePictureAsync({
-        base64: true,
-        quality: 0.7,
-      });
-
-      if (photo?.base64) {
-        handlePhotoSearch(photo.base64);
-        setIsCameraOpen(false);
-      }
-    } catch (error) {
-      console.error('Failed to take photo:', error);
-    }
-  };
-
-  const uploadPhoto = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        base64: true,
-        quality: 0.7,
-      });
-
-      if (!result.canceled && result.assets[0]?.base64) {
-        handlePhotoSearch(result.assets[0].base64);
-        setIsCameraOpen(false);
-      }
-    } catch (error) {
-      console.error('Failed to pick image:', error);
-    }
-  };
-
-  return (
-    <Modal visible={isCameraOpen} animationType="slide">
-      <View style={styles.cameraContainer}>
-        <CameraView
-          style={styles.camera}
-          ref={(ref) => setCameraRef(ref)}
-          mode={'picture'}
-          facing={'back'}
-        >
-          <View style={[styles.cameraControls, { top }]}>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setIsCameraOpen(false)}>
-              <Ionicons name="close" size={30} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.galleryButton} onPress={uploadPhoto}>
-              <Ionicons name="images" size={30} color="white" />
-            </TouchableOpacity>
-            <View style={styles.captureButtonContainer}>
-              <TouchableOpacity style={styles.captureButton} onPress={takePhoto}>
-                <View style={styles.captureButtonInner} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </CameraView>
-      </View>
-    </Modal>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -220,59 +112,5 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 20,
-  },
-  cameraContainer: {
-    flex: 1,
-    backgroundColor: 'black',
-  },
-  camera: {
-    flex: 1,
-  },
-  cameraControls: {
-    position: 'absolute',
-    top: 0,
-    left: 20,
-    right: 20,
-    bottom: 50,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  galleryButton: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captureButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  captureButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captureButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'white',
   },
 });

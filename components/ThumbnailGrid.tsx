@@ -3,12 +3,14 @@ import { getScreenWidth } from '@/lib/utils';
 import { useThumbnails } from '@/hooks/useThumbnails';
 import { ThemedView } from '@/components/ThemedView';
 import { Post } from '@/lib/firebase';
+import { interpolateColor } from 'react-native-reanimated';
 
 type ThumbnailGridProps = {
   posts: Post[];
   onPostPress: (post: Post) => void;
   onScroll?: () => void;
   isScrollable?: boolean;
+  scores?: number[];
 };
 
 export function ThumbnailGrid({ 
@@ -16,23 +18,44 @@ export function ThumbnailGrid({
   onPostPress, 
   onScroll, 
   isScrollable = true,
+  scores,
 }: ThumbnailGridProps) {
   const thumbnails = useThumbnails(posts);
 
-  const renderThumbnail = (post: Post) => (
+  const getInterpolatedColor = (score: number) => {
+    return interpolateColor(
+      score,
+      [0, 0.5, 1],
+      ['#FF0000', '#FFA500', '#00FF00']
+    );
+  };
+
+  const renderThumbnail = (post: Post, index: number) => (
     <Pressable 
       key={post.id}
       style={styles.gridItem}
       onPress={() => onPostPress(post)}
     >
-      {thumbnails[post.id] ? (
-        <Image 
-          source={{ uri: thumbnails[post.id] }}
-          style={styles.thumbnail}
-        />
-      ) : (
-        <ThemedView style={styles.placeholderVideo} />
-      )}
+      <View style={styles.thumbnailContainer}>
+        <View style={[styles.thumbnail, styles.thumbnailPlaceholder]} />
+        {thumbnails[post.id] && (
+          <Image 
+            source={{ uri: thumbnails[post.id] }}
+            style={[styles.thumbnail, styles.thumbnailImage]}
+          />
+        )}
+        {scores && scores[index] !== undefined && (
+          <View style={[
+            styles.scoreBar,
+            { 
+              width: `${scores[index] * 100}%`,
+              backgroundColor: getInterpolatedColor(scores[index]),
+              borderBottomRightRadius: scores[index] > 0.99 ? 4 : 0,
+              borderBottomLeftRadius: 4,
+            }
+          ]} />
+        )}
+      </View>
     </Pressable>
   );
 
@@ -45,7 +68,7 @@ export function ThumbnailGrid({
   if (!isScrollable) {
     return (
       <View style={styles.wrappedGrid}>
-        {posts.map(renderThumbnail)}
+        {posts.map((post, index) => renderThumbnail(post, index))}
       </View>
     );
   }
@@ -53,7 +76,7 @@ export function ThumbnailGrid({
   return (
     <FlatList
       data={posts}
-      renderItem={({ item }) => renderThumbnail(item)}
+      renderItem={({ item, index }) => renderThumbnail(item, index)}
       keyExtractor={post => post.id}
       numColumns={NUM_COLUMNS}
       onScroll={onScroll}
@@ -87,12 +110,32 @@ const styles = StyleSheet.create({
     height: ITEM_WIDTH * 1.5,
     padding: GRID_SPACING,
   },
+  thumbnailContainer: {
+    width: ITEM_WIDTH,
+    height: ITEM_WIDTH * 1.5,
+    position: 'relative',
+  },
   thumbnail: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     borderRadius: 4,
   },
+  thumbnailPlaceholder: {
+    position: 'absolute',
+    backgroundColor: '#333',
+  },
+  thumbnailImage: {
+    position: 'absolute',
+  },
+  scoreBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    height: 4,
+  },
   placeholderVideo: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     borderRadius: 4,
   },
   emptyContainer: {
